@@ -1,0 +1,13 @@
+{
+  "name": "hyperlab-app",
+  "version": "0.0.1",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "hyperlab",
+    "export": "hyperlab export",
+    "export-dev": "hyperlab export --dev"
+  },
+  "dependencies": {
+    "hyperlab": "^0.0.4"
+  }
+}
