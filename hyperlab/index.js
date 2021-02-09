@@ -49,14 +49,19 @@ class Renderer {
     return this.server.getUrlForFile(join(appPath, "routes", path));
   }
 
-  async renderPage(path, { src, code, css } = {}) {
+  async renderPage(path, { src, code, css, preloads } = {}) {
     const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
 
     let script = "";
+    if (preloads) {
+      for (const preload of preloads) {
+        script += `<link rel="modulepreload" href="${preload}">\n`;
+      }
+    }
     if (code) {
-      script = `<script type="module">${code}</script>`;
+      script += `<script type="module">${code}</script>\n`;
     } else if (src) {
-      script = `<script type="module" src="${src}"></script>`;
+      script += `<script type="module" src="${src}"></script>\n`;
     }
 
     const component = (await this.runtime.importModule(pageUrl)).exports
@@ -131,11 +136,11 @@ async function static({ dev } = {}) {
     dir: join(".", exportDirName, assetsDirName),
   });
 
-  // const indexedOutput = new Map(
-  //   bundle.output
-  //     .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
-  //     .map((o) => [o.facadeModuleId, o])
-  // );
+  const indexedOutput = new Map(
+    bundle.output
+      .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
+      .map((o) => [o.facadeModuleId, o])
+  );
 
   await Promise.all(
     fileNames.map(async function (fileName) {
@@ -144,11 +149,20 @@ async function static({ dev } = {}) {
       // const jsFileName = indexedOutput.get(
       //   `${virtualFilePrefix}./${fileName}.js`
       // )?.fileName;
+      const output = indexedOutput.get(join(appPath, routesDirName, fileName));
+      const entry = join("/", assetsDirName, `${name}.js`);
+
+      const preloads = [
+        entry,
+        ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
+      ];
+
       const page = await renderer.renderPage(fileName, {
         // src: jsFileName ? join("/", assetsDirName, jsFileName) : undefined,
         src: undefined,
+        preloads,
         code: `
-        import Page from "${join("/", assetsDirName, `${name}.js`)}";
+        import Page from "${entry}";
         new Page({
           target: document.body,
           hydrate: true,
