@@ -1,6 +1,6 @@
 {
   "name": "hyperlab-app",
-  "version": "0.0.3",
+  "version": "0.0.2-beta.1",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "hyperlab",
