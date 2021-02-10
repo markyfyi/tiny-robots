@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { join, parse } = require("path");
+const { join, parse, dirname } = require("path");
 const { readFileSync, writeFileSync, readdirSync } = require("fs");
-const { createServer } = require("http");
+const { createServer, Server } = require("http");
 
 const mkdirp = require("mkdirp");
 const { startServer, loadConfiguration } = require("snowpack");
@@ -23,6 +23,7 @@ const assetsDirName = "assets";
 const routesDirName = "routes";
 const exportDirName = "export";
 const htmlPath = "index.html";
+const routePath = "/_snowpack/pkg/hyperlab/runtime/Route.svelte.js";
 // const virtualFilePrefix = "\x00virtual:";
 // const jsIndexPath = "index.js";
 
@@ -49,9 +50,7 @@ class Renderer {
     return this.server.getUrlForFile(join(appPath, "routes", path));
   }
 
-  async renderPage(path, { src, code, css, preloads } = {}) {
-    const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
-
+  async renderPage(path, layoutPath, { src, code, css, preloads } = {}) {
     let script = "";
     if (preloads) {
       for (const preload of preloads) {
@@ -64,12 +63,30 @@ class Renderer {
       script += `<script type="module" src="${src}"></script>\n`;
     }
 
-    const component = (await this.runtime.importModule(pageUrl)).exports
-      .default;
-
-    const { head: pageHead, css: pageCss, html: rootHtml } = component.render(
-      {}
+    const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
+    const layoutUrl = this.server.getUrlForFile(
+      join(appPath, "routes", layoutPath)
     );
+
+    const pageComponent = (await this.runtime.importModule(pageUrl)).exports
+      .default;
+    const layoutComponent = (await this.runtime.importModule(layoutUrl)).exports
+      .default;
+    const RouteComponent = (
+      await this.runtime.importModule(
+        "/node_modules/hyperlab/runtime/Route.svelte.js"
+      )
+    ).exports.default;
+
+    const {
+      head: pageHead,
+      css: pageCss,
+      html: rootHtml,
+    } = RouteComponent.render({
+      pageComponent,
+      layoutComponent,
+      pageProps: {},
+    });
 
     const headCode = pageHead;
     const cssCode = `<style type="text/css">${css ?? ""}\n${
@@ -100,16 +117,35 @@ async function devServer() {
 
   createServer(async (req, res) => {
     const [path] = req.url.split("?");
-    const resolvedPath = (!path || path === "/" ? "/index" : path) + ".svelte";
+    const pagePath = (!path || path === "/" ? "/index" : path) + ".svelte";
+    const layoutPath = join(dirname(pagePath), "_layout.svelte");
 
-    const code = `
-    import Page from '${renderer.getUrl(resolvedPath)}';
-    new Page({
+    // const code = `
+    // import Page from '${renderer.getUrl(pagePath)}';
+    // new Page({
+    //   target: document.body,
+    //   hydrate: true,
+    // });`;
+
+    const pageUrl = renderer.getUrl(pagePath);
+    const layoutUrl = renderer.getUrl(layoutPath);
+
+    const code = /* js */ `
+    import Page from '${pageUrl}';
+    import Layout from '${layoutUrl}';
+    import Route from "${routePath}";
+    let route = new Route({
       target: document.body,
       hydrate: true,
-    });`;
+      props: {
+        layoutComponent: Layout,
+        pageComponent: Page,
+        pageProps: {},
+      }
+    });
+    `;
 
-    const page = await renderer.renderPage(resolvedPath, {
+    const page = await renderer.renderPage(pagePath, layoutPath, {
       code,
       src: undefined,
       css: undefined,
@@ -157,20 +193,35 @@ async function static({ dev } = {}) {
         ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
       ];
 
-      const page = await renderer.renderPage(fileName, {
-        // src: jsFileName ? join("/", assetsDirName, jsFileName) : undefined,
-        src: undefined,
-        preloads,
-        code: `
-        import Page from "${entry}";
-        new Page({
-          target: document.body,
-          hydrate: true,
-        });
+      const page = await renderer.renderPage(
+        fileName,
+        join(dir, "_layout.svelte"),
+        {
+          // src: jsFileName ? join("/", assetsDirName, jsFileName) : undefined,
+          src: undefined,
+          preloads,
+          code: `
+          import Page from '${entry}';
+          import Layout from '${join(
+            "/",
+            assetsDirName,
+            `${"_layout.svelte"}.js`
+          )}';
+          import Route from "${routePath}";
+          let route = new Route({
+            target: document.body,
+            hydrate: true,
+            props: {
+              layoutComponent: Layout,
+              pageComponent: Page,
+              pageProps: {},
+            }
+          });
         `,
-        css: undefined,
-        dev: false,
-      });
+          css: undefined,
+          dev: false,
+        }
+      );
 
       writeFileSync(join(".", exportDirName, dir, `${name}.html`), page);
     })
@@ -194,7 +245,6 @@ function rollupConfig({ fileNames, dev }) {
       svelte({
         emitCss: false,
         compilerOptions: {
-          dev,
           hydratable: true,
         },
       }),
@@ -243,6 +293,12 @@ function snowpackConfig({ proxyDest }) {
         dest: proxyDest,
       },
     ],
+    packageOptions: {
+      knownEntrypoints: [
+        "hyperlab/runtime/x.js",
+        "hyperlab/runtime/Route.svelte",
+      ],
+    },
   };
 }
 
@@ -260,21 +316,24 @@ async function main() {
 
 main();
 
-// function fileNamesToEntries(fileNames) {
-//   const entries = {};
-//   const virtualEntries = {};
-//   for (const fileName of fileNames) {
-//     const file = `./${fileName}.js`;
-//     const code = `
-// import Page from './${join(".", routesDirName, fileName)}';
-// import { start } from "./index";
-// start(Page);`;
-//     entries[fileName] = file;
-//     virtualEntries[file] = code;
-//   }
+function fileNamesToEntries(fileNames) {
+  const entries = {};
+  const virtualEntries = {};
+  for (const fileName of fileNames) {
+    const file = `./${fileName}.js`;
+    const code = /* js */ `
+import Page from './${join(".", routesDirName, fileName)}';
+import Route from "hyperlab/runtime/Route";
+let route = new Route({
+  target: document.body,
+  hydrate: true,
+});`;
+    entries[fileName] = file;
+    virtualEntries[file] = code;
+  }
 
-//   return {
-//     entries,
-//     virtualEntries,
-//   };
-// }
+  return {
+    entries,
+    virtualEntries,
+  };
+}
