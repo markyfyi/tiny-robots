@@ -1,6 +1,6 @@
 # hyperlab
 
-> 🏗 WIP
+🏗 WIP
 
 A frontend build system and microframework for [Svelte](https://svelte.dev/) designed for developer joy and velocity.
 
