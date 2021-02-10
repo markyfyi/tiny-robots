@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "export-dev",
+      "path": "template/",
+      "problemMatcher": [],
+      "label": "npm: export-dev - template",
+      "detail": "hyperlab export --dev",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

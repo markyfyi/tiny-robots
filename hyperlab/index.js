@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { join, parse, dirname } = require("path");
-const { readFileSync, writeFileSync, readdirSync } = require("fs");
+const { readFileSync, writeFileSync, readdirSync, existsSync } = require("fs");
 const { createServer, Server } = require("http");
 
 const mkdirp = require("mkdirp");
@@ -16,16 +16,18 @@ const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const postcss = require("rollup-plugin-postcss");
 const copy = require("rollup-plugin-copy");
+const virtual = require("@rollup/plugin-virtual");
 // const styles = require("rollup-plugin-styles");
-// const virtual = require("@rollup/plugin-virtual");
 
 const assetsDirName = "assets";
 const routesDirName = "routes";
 const exportDirName = "export";
 const htmlPath = "index.html";
+const rollupVirtualFilePrefix = "\x00virtual:";
 const routePath = "/_snowpack/pkg/hyperlab/runtime/Route.svelte.js";
-// const virtualFilePrefix = "\x00virtual:";
-// const jsIndexPath = "index.js";
+const routeModulePath = "hyperlab/runtime/Route.svelte";
+const resolvedRouteModulePath =
+  "/node_modules/hyperlab/runtime/Route.svelte.js";
 
 const appPath = process.cwd();
 const [, , command, ...restArgs] = process.argv;
@@ -37,6 +39,9 @@ class Renderer {
     const config = await loadConfiguration(
       snowpackConfig({ proxyDest: (req, res) => this.proxy.web(req, res) })
     );
+
+    const rollupPlugins = config.packageOptions.rollup.plugins;
+    const rollupSveltePlugin = rollupPlugins.find((p) => p.name === "svelte");
 
     this.server = await startServer({
       config,
@@ -63,19 +68,21 @@ class Renderer {
       script += `<script type="module" src="${src}"></script>\n`;
     }
 
-    const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
-    const layoutUrl = this.server.getUrlForFile(
-      join(appPath, "routes", layoutPath)
-    );
+    let layoutComponent;
+    if (layoutPath) {
+      const layoutUrl = this.server.getUrlForFile(
+        join(appPath, "routes", layoutPath)
+      );
+      layoutComponent = (await this.runtime.importModule(layoutUrl)).exports
+        .default;
+    }
 
+    const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
     const pageComponent = (await this.runtime.importModule(pageUrl)).exports
       .default;
-    const layoutComponent = (await this.runtime.importModule(layoutUrl)).exports
-      .default;
+
     const RouteComponent = (
-      await this.runtime.importModule(
-        "/node_modules/hyperlab/runtime/Route.svelte.js"
-      )
+      await this.runtime.importModule(resolvedRouteModulePath)
     ).exports.default;
 
     const {
@@ -119,21 +126,37 @@ async function devServer() {
     const [path] = req.url.split("?");
     const pagePath = (!path || path === "/" ? "/index" : path) + ".svelte";
     const layoutPath = join(dirname(pagePath), "_layout.svelte");
-
-    // const code = `
-    // import Page from '${renderer.getUrl(pagePath)}';
-    // new Page({
-    //   target: document.body,
-    //   hydrate: true,
-    // });`;
+    const hasLayout = existsSync(layoutPath);
 
     const pageUrl = renderer.getUrl(pagePath);
-    const layoutUrl = renderer.getUrl(layoutPath);
 
-    const code = /* js */ `
+    let layoutUrl;
+    if (hasLayout) {
+      layoutUrl = renderer.getUrl(layoutPath);
+    }
+
+    const code = /* js */ genEntry(pageUrl, layoutUrl, routePath);
+
+    const page = await renderer.renderPage(pagePath, layoutPath, {
+      code,
+      src: undefined,
+      css: undefined,
+      preloads: undefined,
+    });
+
+    res.setHeader("Content-Type", "text/html");
+    res.end(page);
+  }).listen(8081);
+}
+
+function genEntry(pageUrl, layoutUrl, routeUrl) {
+  return `
+    import Route from "${routeUrl}";
     import Page from '${pageUrl}';
-    import Layout from '${layoutUrl}';
-    import Route from "${routePath}";
+    
+    ${layoutUrl ? `import Layout from '${layoutUrl}'` : `const Layout = null;`};
+
+
     let route = new Route({
       target: document.body,
       hydrate: true,
@@ -144,30 +167,29 @@ async function devServer() {
       }
     });
     `;
-
-    const page = await renderer.renderPage(pagePath, layoutPath, {
-      code,
-      src: undefined,
-      css: undefined,
-    });
-
-    res.setHeader("Content-Type", "text/html");
-    res.end(page);
-  }).listen(8081);
 }
 
 async function static({ dev } = {}) {
   const renderer = new Renderer();
   await renderer.init();
 
-  const fileNames = readdirSync(join(appPath, routesDirName));
-  // const { entries, virtualEntries } = fileNamesToEntries(fileNames);
+  const fileNames = readdirSync(join(appPath, routesDirName)).filter(
+    (n) => n !== "_layout.svelte"
+  );
+
+  const { entries, virtualEntries, fileNamesEntries } = fileNamesToEntries(
+    fileNames
+  );
+  console.log({ entries });
   mkdirp(join(appPath, exportDirName));
 
-  const build = await rollup(rollupConfig({ fileNames, dev }));
+  const build = await rollup(
+    rollupConfig({ fileNames: Object.keys(entries), dev, virtualEntries })
+  );
 
   const bundle = await build.write({
     hoistTransitiveImports: false,
+    entryFileNames: "entry-[hash].js",
     format: "es",
     dir: join(".", exportDirName, assetsDirName),
   });
@@ -175,54 +197,31 @@ async function static({ dev } = {}) {
   const indexedOutput = new Map(
     bundle.output
       .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
-      .map((o) => [o.facadeModuleId, o])
+      .map((o) => [o.facadeModuleId.replace(rollupVirtualFilePrefix, ""), o])
   );
 
   await Promise.all(
     fileNames.map(async function (fileName) {
       const { name, dir } = parse(fileName);
-      await mkdirp(join(".", exportDirName, dir));
-      // const jsFileName = indexedOutput.get(
-      //   `${virtualFilePrefix}./${fileName}.js`
-      // )?.fileName;
-      const output = indexedOutput.get(join(appPath, routesDirName, fileName));
-      const entry = join("/", assetsDirName, `${name}.js`);
 
-      const preloads = [
-        entry,
-        ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
-      ];
-
-      const page = await renderer.renderPage(
-        fileName,
-        join(dir, "_layout.svelte"),
-        {
-          // src: jsFileName ? join("/", assetsDirName, jsFileName) : undefined,
-          src: undefined,
-          preloads,
-          code: `
-          import Page from '${entry}';
-          import Layout from '${join(
-            "/",
-            assetsDirName,
-            `${"_layout.svelte"}.js`
-          )}';
-          import Route from "${routePath}";
-          let route = new Route({
-            target: document.body,
-            hydrate: true,
-            props: {
-              layoutComponent: Layout,
-              pageComponent: Page,
-              pageProps: {},
-            }
-          });
-        `,
-          css: undefined,
-          dev: false,
-        }
+      const hasLayout = existsSync(
+        join(appPath, routesDirName, dir, "_layout.svelte")
       );
+      const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
+      const output = indexedOutput.get(fileNamesEntries[fileName]);
 
+      const page = await renderer.renderPage(fileName, layoutPath, {
+        src: join("/", assetsDirName, output.fileName),
+        preloads: [
+          ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
+          join("/", assetsDirName, output.fileName),
+        ],
+        code: undefined,
+        css: undefined,
+        dev: false,
+      });
+
+      await mkdirp(join(".", exportDirName, dir));
       writeFileSync(join(".", exportDirName, dir, `${name}.html`), page);
     })
   );
@@ -231,9 +230,33 @@ async function static({ dev } = {}) {
   await renderer.stop();
 }
 
-function rollupConfig({ fileNames, dev }) {
+function fileNamesToEntries(fileNames) {
+  const entries = {};
+  const virtualEntries = {};
+  const fileNamesEntries = {};
+  for (const fileName of fileNames) {
+    const { dir, name } = parse(fileName);
+    const code = genEntry(
+      `./routes/${fileName}`,
+      `./routes/${join(dir, "_layout.svelte")}`,
+      routeModulePath
+    );
+
+    entries[`${name}.js`] = fileName;
+    virtualEntries[`${name}.js`] = code;
+    fileNamesEntries[fileName] = `${name}.js`;
+  }
+
   return {
-    input: fileNames.map((n) => join(".", routesDirName, n)),
+    entries,
+    virtualEntries,
+    fileNamesEntries,
+  };
+}
+
+function rollupConfig({ fileNames, dev, virtualEntries }) {
+  return {
+    input: fileNames,
     plugins: [
       replace({
         "process.browser": true,
@@ -241,7 +264,7 @@ function rollupConfig({ fileNames, dev }) {
           NODE_ENV: dev ? "development" : "production",
         }),
       }),
-      // virtual(virtualEntries),
+      virtual(virtualEntries),
       svelte({
         emitCss: false,
         compilerOptions: {
@@ -294,10 +317,7 @@ function snowpackConfig({ proxyDest }) {
       },
     ],
     packageOptions: {
-      knownEntrypoints: [
-        "hyperlab/runtime/x.js",
-        "hyperlab/runtime/Route.svelte",
-      ],
+      knownEntrypoints: [routeModulePath],
     },
   };
 }
@@ -315,25 +335,3 @@ async function main() {
 }
 
 main();
-
-function fileNamesToEntries(fileNames) {
-  const entries = {};
-  const virtualEntries = {};
-  for (const fileName of fileNames) {
-    const file = `./${fileName}.js`;
-    const code = /* js */ `
-import Page from './${join(".", routesDirName, fileName)}';
-import Route from "hyperlab/runtime/Route";
-let route = new Route({
-  target: document.body,
-  hydrate: true,
-});`;
-    entries[fileName] = file;
-    virtualEntries[file] = code;
-  }
-
-  return {
-    entries,
-    virtualEntries,
-  };
-}
