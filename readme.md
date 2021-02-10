@@ -1,13 +1,6 @@
 # hyperlab
 
-_An app template and frontend build system designed for dev velocity._
-
-## Description
-
-- Dev mode & static build
-- Filesystem-based routing
-- Snowpack + esbuild for development
-- Rollup for production
+Hello 👋🏼
 
 ## Todo
 
