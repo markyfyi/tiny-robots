@@ -8,6 +8,6 @@
     "export-dev": "hyperlab export --dev"
   },
   "dependencies": {
-    "hyperlab": "^0.0.11"
+    "hyperlab": "^0.0.12"
   }
 }
