@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { join, dirname } = require("path");
+const { join, dirname, extname } = require("path");
 const {
   readFileSync,
   writeFileSync,
@@ -39,6 +39,13 @@ const resolvedRouteModulePath =
 
 const appPath = process.cwd();
 const [, , command, ...restArgs] = process.argv;
+const dev = restArgs.includes("--dev");
+
+const minifyOptions = {
+  collapseWhitespace: true,
+  conservativeCollapse: true,
+  minifyCSS: true,
+};
 
 class Renderer {
   async init() {
@@ -60,14 +67,29 @@ class Renderer {
   }
 
   getUrl(path) {
-    return this.server.getUrlForFile(join(appPath, "routes", path));
+    return this.server.getUrlForFile(apr(path));
   }
 
   async renderPage(
     path,
     { src, code, css, preloads, layoutPath, appLayoutPath } = {}
   ) {
+    const pageUrl = this.server.getUrlForFile(apr(path));
+    const { default: pageComponent, prefetch } = (
+      await this.runtime.importModule(pageUrl)
+    ).exports;
+
+    let prefetchedProps = {};
+    if (prefetch) {
+      prefetchedProps = await prefetch();
+    }
+
     let script = "";
+    if (prefetchedProps) {
+      script += `<script>__hyperlabPrefetchedProps = ${JSON.stringify(
+        prefetchedProps
+      )}</script>`;
+    }
     if (preloads) {
       for (const preload of preloads) {
         script += `<link rel="modulepreload" href="${preload}">`;
@@ -79,23 +101,15 @@ class Renderer {
       script += `<script type="module" src="${src}"></script>`;
     }
 
-    const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
-    const pageComponent = (await this.runtime.importModule(pageUrl)).exports
-      .default;
-
     let layoutComponent;
     if (layoutPath) {
-      const url = this.server.getUrlForFile(
-        join(appPath, "routes", layoutPath)
-      );
+      const url = this.server.getUrlForFile(apr(layoutPath));
       layoutComponent = (await this.runtime.importModule(url)).exports.default;
     }
 
     let appLayoutComponent;
     if (appLayoutPath) {
-      const url = this.server.getUrlForFile(
-        join(appPath, "routes", appLayoutPath)
-      );
+      const url = this.server.getUrlForFile(apr(appLayoutPath));
       appLayoutComponent = (await this.runtime.importModule(url)).exports
         .default;
     }
@@ -112,7 +126,7 @@ class Renderer {
       pageComponent,
       appLayoutComponent,
       layoutComponent,
-      pageProps: {},
+      pageProps: { ...prefetchedProps },
     });
 
     const headCode = pageHead;
@@ -129,7 +143,7 @@ class Renderer {
       .filter((s) => s)
       .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
 
-    const baseHtml = readFileSync(join(appPath, htmlPath)).toString();
+    const baseHtml = readFileSync(ap(htmlPath)).toString();
 
     const page = baseHtml
       .replace("<!-- @HEAD -->", headCode)
@@ -137,11 +151,7 @@ class Renderer {
       .replace("<!-- @HTML -->", rootHtml)
       .replace("<!-- @SCRIPT -->", script);
 
-    const minifiedPage = htmlMinifier.minify(page, {
-      collapseWhitespace: true,
-      conservativeCollapse: true,
-      minifyCSS: true,
-    });
+    const minifiedPage = htmlMinifier.minify(page, minifyOptions);
 
     return minifiedPage;
   }
@@ -174,7 +184,7 @@ async function devServer() {
     }
 
     try {
-      const filePath = join(appPath, routesDirName, path);
+      const filePath = apr(path);
       const isDir = existsSync(filePath) && statSync(filePath).isDirectory();
       let pagePathBase = path;
       if (!path || path === "/") {
@@ -186,7 +196,15 @@ async function devServer() {
       }
       const pagePath = pagePathBase + ".svelte";
 
-      if (!existsSync(join(appPath, routesDirName, pagePath))) {
+      if (!existsSync(apr(pagePath))) {
+        const htmlPath = apr(pagePathBase + ".html");
+        if (existsSync(htmlPath)) {
+          res.setHeader("Content-Type", "text/html");
+          res.statusCode = 200;
+          res.end(readFileSync(htmlPath).toString());
+          return;
+        }
+
         error404();
         return;
       }
@@ -196,15 +214,13 @@ async function devServer() {
       const pageUrl = renderer.getUrl(pagePath);
 
       let layoutUrl;
-      const hasLayout = existsSync(join(appPath, routesDirName, layoutPath));
+      const hasLayout = existsSync(apr(layoutPath));
       if (hasLayout) {
         layoutUrl = renderer.getUrl(layoutPath);
       }
 
       let appLayoutUrl;
-      const hasAppLayout = existsSync(
-        join(appPath, routesDirName, appLayoutPath)
-      );
+      const hasAppLayout = existsSync(apr(appLayoutPath));
       if (hasAppLayout) {
         appLayoutUrl = renderer.getUrl(appLayoutPath);
       }
@@ -227,7 +243,8 @@ async function devServer() {
       console.error(error);
       res.statusCode = 500;
       res.setHeader("Content-Type", "text/plain");
-      res.end("500: Oops, something broke!");
+      res.write(`500: Oops, something broke!\n\n${error.stack}`);
+      res.end();
       return;
     }
   }).listen(8081);
@@ -253,6 +270,7 @@ let route = new Route({
     appLayoutComponent: AppLayout,
     layoutComponent: Layout,
     pageComponent: Page,
+    pageProps: __hyperlabPrefetchedProps
   }
 });
 // @end`;
@@ -262,9 +280,9 @@ async function static({ dev } = {}) {
   const renderer = new Renderer();
   await renderer.init();
 
-  const pages = allPages(join(appPath, routesDirName));
+  const pages = allPages(apr("."));
 
-  const hasAppLayout = existsSync(join(appPath, routesDirName, "_app.svelte"));
+  const hasAppLayout = existsSync(apr("_app.svelte"));
   const { entries, virtualEntries, fileNamesToEntries } = pagesToEntries(
     pages,
     hasAppLayout
@@ -274,7 +292,7 @@ async function static({ dev } = {}) {
     rollupConfig({ fileNames: Object.keys(entries), dev, virtualEntries })
   );
 
-  mkdirp(join(appPath, exportDirName));
+  mkdirp(ap(exportDirName));
   const bundle = await build.write({
     hoistTransitiveImports: false,
     compact: true,
@@ -294,18 +312,24 @@ async function static({ dev } = {}) {
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
 
-      const page = await renderer.renderPage(filePath, {
-        layoutPath,
-        appLayoutPath: hasAppLayout ? "_app.svelte" : null,
-        src: join("/", assetsDirName, output.fileName),
-        preloads: [
-          ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
-          join("/", assetsDirName, output.fileName),
-        ],
-        code: undefined,
-        css: undefined,
-        dev: false,
-      });
+      let page;
+      try {
+        page = await renderer.renderPage(filePath, {
+          layoutPath,
+          appLayoutPath: hasAppLayout ? "_app.svelte" : null,
+          src: join("/", assetsDirName, output.fileName),
+          preloads: [
+            ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
+            join("/", assetsDirName, output.fileName),
+          ],
+          code: undefined,
+          css: undefined,
+          dev: false,
+        });
+      } catch (error) {
+        console.error(`Export failed on page '${page}' with error:`, error);
+        throw new Error("Export error");
+      }
 
       await mkdirp(join(".", exportDirName, dir));
       writeFileSync(
@@ -369,8 +393,16 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
       copy({
         targets: [
           {
-            src: join(appPath, "static"),
-            dest: join(appPath, "export"),
+            src: ap("static"),
+            dest: ap("export"),
+          },
+          {
+            src: ap("routes/**/*.html"),
+            dest: ap("export"),
+            flatten: false,
+            transform: (html) => {
+              return htmlMinifier.minify(html.toString(), minifyOptions);
+            },
           },
         ],
       }),
@@ -418,7 +450,10 @@ function allPages(root, dir = "") {
     (dirent) => dirent.name === "_layout.svelte"
   );
   for (const dirent of dirents) {
-    if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
+    if (
+      ["_layout.svelte", "_app.svelte"].includes(dirent.name) ||
+      extname(dirent.name) !== ".svelte"
+    ) {
       continue;
     } else if (dirent.isDirectory()) {
       for (const page of allPages(root, join(dir, dirent.name))) {
@@ -457,20 +492,27 @@ function ap(...ps) {
   return join(appPath, ...ps);
 }
 
-async function main() {
-  if (!command || command === "dev") {
-    devServer();
-  } else if (command === "export") {
-    const dev = restArgs.includes("--dev");
-    await static({ dev: dev });
-    process.exit(0);
-  } else {
-    console.error("Unrecognized command.");
-  }
+function apr(...ps) {
+  return join(appPath, routesDirName, ...ps);
 }
 
 function last(xs) {
   return xs[xs.length - 1];
+}
+
+async function main() {
+  if (!command || command === "dev") {
+    devServer();
+  } else if (command === "export") {
+    try {
+      await static({ dev });
+    } catch (error) {
+      process.exit(1);
+    }
+    process.exit(0);
+  } else {
+    console.error("Unrecognized command.");
+  }
 }
 
 main();

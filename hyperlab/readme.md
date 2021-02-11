@@ -13,16 +13,8 @@ A frontend build system and microframework for [Svelte](https://svelte.dev/) des
   - Directory-based layout pages.
   - Global app layout.
 - Inlined global/critical CSS.
-
-### WIP
-
-- TypeScript and markdown support.
 - Data-fetching hooks.
-
-### Coming soon
-
-- Slugs/catchall routes.
-- An SPA router.
+- HTML rendering.
 
 ## Install
 
@@ -45,3 +37,25 @@ yarn run hyperlab export
 ```
 
 Generates static HTML pages and a client JS bundle with [Rollup](https://rollupjs.org/guide/en/).
+
+### Roadmap
+
+#### WIP
+
+- TypeScript and markdown support.
+- Error pages.
+
+#### Coming soon
+
+- An SPA router.
+  - Flag to render before/after data fetch.
+  - Slugs/catchall routes.
+- SSR mode.
+  - Vercel runtime integration.
+  - Server hooks.
+- Better CSS extraction.
+- HTML features.
+  - Layout and partials.
+  - Inject global scripts and styles.
+  - Different preprocessors.
+- URL rewrite generation for Vercel and Netlify.
