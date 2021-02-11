@@ -9,16 +9,18 @@ A frontend build system and microframework for [Svelte](https://svelte.dev/) des
 - 🔥 Ultrafast hot module replacement.
 - Static site generation.
 - Filesystem-based routing.
+  - Nested routes.
+  - Directory-based layout pages.
+  - Global app layout.
+- Inlined global/critical CSS.
 
-### WUP
-
-- Nested routes.
-- Directory-based layout pages.
-
-### Coming soon
+### WIP
 
 - TypeScript and markdown support.
 - Data-fetching hooks.
+
+### Coming soon
+
 - Slugs/catchall routes.
 - An SPA router.
 

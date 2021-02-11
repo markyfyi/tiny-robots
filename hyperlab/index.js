@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { join, parse, dirname } = require("path");
+const { join, dirname } = require("path");
 const {
   readFileSync,
   writeFileSync,
@@ -8,11 +8,12 @@ const {
   existsSync,
   statSync,
 } = require("fs");
-const { createServer, Server } = require("http");
+const { createServer } = require("http");
 
 const mkdirp = require("mkdirp");
 const { startServer, loadConfiguration } = require("snowpack");
 const httpProxy = require("http-proxy");
+const htmlMinifier = require("html-minifier");
 
 const { rollup } = require("rollup");
 const svelte = require("rollup-plugin-svelte");
@@ -23,13 +24,13 @@ const replace = require("@rollup/plugin-replace");
 const postcss = require("rollup-plugin-postcss");
 const copy = require("rollup-plugin-copy");
 const virtual = require("@rollup/plugin-virtual");
-// const styles = require("rollup-plugin-styles");
 
 const assetsDirName = "assets";
 const routesDirName = "routes";
 const exportDirName = "export";
 const htmlPath = "index.html";
 const rollupVirtualFilePrefix = "\x00virtual:";
+const globalAssetsPath = "global";
 const appLayoutPath = "/_app.svelte";
 const routePath = "/_snowpack/pkg/hyperlab/runtime/Route.svelte.js";
 const routeModulePath = "hyperlab/runtime/Route.svelte";
@@ -48,7 +49,7 @@ class Renderer {
     );
 
     const rollupPlugins = config.packageOptions.rollup.plugins;
-    const rollupSveltePlugin = rollupPlugins.find((p) => p.name === "svelte");
+    // const rollupSveltePlugin = rollupPlugins.find((p) => p.name === "svelte");
 
     this.server = await startServer({
       config,
@@ -69,13 +70,13 @@ class Renderer {
     let script = "";
     if (preloads) {
       for (const preload of preloads) {
-        script += `<link rel="modulepreload" href="${preload}">\n`;
+        script += `<link rel="modulepreload" href="${preload}">`;
       }
     }
     if (code) {
-      script += `<script type="module">${code}</script>\n`;
+      script += `<script type="module">${code}</script>`;
     } else if (src) {
-      script += `<script type="module" src="${src}"></script>\n`;
+      script += `<script type="module" src="${src}"></script>`;
     }
 
     const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
@@ -115,9 +116,18 @@ class Renderer {
     });
 
     const headCode = pageHead;
-    const cssCode = `<style type="text/css">${css ?? ""}\n${
-      pageCss.code ?? ""
-    }</style>`;
+
+    // const cssCode = await (
+    //   await Promise.all(
+    //     [getGlobalCss(), css, pageCss.code]
+    //       .filter((s) => s)
+    //       .map((s) => cssnano.process(s))
+    //   )
+    // ).reduce((h, { css }) => h + `<style type="text/css">${css}</style>`, "");
+
+    const cssCode = await [getGlobalCss(), css, pageCss.code]
+      .filter((s) => s)
+      .reduce((h, { css }) => h + `<style type="text/css">${css}</style>`, "");
 
     const baseHtml = readFileSync(join(appPath, htmlPath)).toString();
 
@@ -127,7 +137,13 @@ class Renderer {
       .replace("<!-- @HTML -->", rootHtml)
       .replace("<!-- @SCRIPT -->", script);
 
-    return page;
+    const minifiedPage = htmlMinifier.minify(page, {
+      collapseWhitespace: true,
+      conservativeCollapse: true,
+      minifyCSS: true,
+    });
+
+    return minifiedPage;
   }
 
   async stop() {
@@ -421,6 +437,26 @@ function allPages(root, dir = "") {
   return pages;
 }
 
+function getGlobalCss() {
+  let css = "";
+
+  try {
+    if (existsSync(ap(globalAssetsPath))) {
+      for (const name of readdirSync(ap(globalAssetsPath))) {
+        if (name.endsWith(".css")) {
+          css += readFileSync(ap(globalAssetsPath, name));
+        }
+      }
+    }
+  } catch (error) {}
+
+  return css;
+}
+
+function ap(...ps) {
+  return join(appPath, ...ps);
+}
+
 async function main() {
   if (!command || command === "dev") {
     devServer();
@@ -436,5 +472,7 @@ async function main() {
 function last(xs) {
   return xs[xs.length - 1];
 }
+
+console.log(getGlobalCss());
 
 main();
