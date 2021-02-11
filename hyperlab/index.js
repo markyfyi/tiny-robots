@@ -127,7 +127,7 @@ class Renderer {
 
     const cssCode = await [getGlobalCss(), css, pageCss.code]
       .filter((s) => s)
-      .reduce((h, { css }) => h + `<style type="text/css">${css}</style>`, "");
+      .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
 
     const baseHtml = readFileSync(join(appPath, htmlPath)).toString();
 
@@ -418,7 +418,7 @@ function allPages(root, dir = "") {
     (dirent) => dirent.name === "_layout.svelte"
   );
   for (const dirent of dirents) {
-    if (dirent.name === "_layout.svelte") {
+    if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
       continue;
     } else if (dirent.isDirectory()) {
       for (const page of allPages(root, join(dir, dirent.name))) {
@@ -472,7 +472,5 @@ async function main() {
 function last(xs) {
   return xs[xs.length - 1];
 }
-
-console.log(getGlobalCss());
 
 main();
