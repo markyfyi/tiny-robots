@@ -958,10 +958,10 @@ http-proxy@^1.18.1:
     follow-redirects "^1.0.0"
     requires-port "^1.0.0"
 
-hyperlab@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/hyperlab/-/hyperlab-0.0.10.tgz#36708ae9c8e3ea0aec2555a1e13f5952ad6ab789"
-  integrity sha512-4jN7YwdCmfWvlZlzez/Ki8z8m9uVSRP+jE7Ff/8T98NfWCpPEyScDrlDxv8TFnax9S1AACvwMYy4QMgiENiX/A==
+hyperlab@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/hyperlab/-/hyperlab-0.0.11.tgz#a53d25df7cdf49088e0468b000c9ccf48ff2bcc3"
+  integrity sha512-2ymlHEmu9cKaJ5+Z84q5LPMsN9qHcaV+YXVmvUrDKmDxrKTtm5oJUskGZUoVM202htuUgjyMqWx53sfcbNn3YA==
   dependencies:
     "@rollup/plugin-babel" "^5.2.3"
     "@rollup/plugin-commonjs" "^17.1.0"
@@ -969,6 +969,7 @@ hyperlab@^0.0.10:
     "@rollup/plugin-replace" "^2.3.4"
     "@rollup/plugin-virtual" "^2.0.3"
     "@snowpack/plugin-svelte" "^3.5.2"
+    cssnano "^4.1.10"
     html-minifier "^4.0.0"
     http-proxy "^1.18.1"
     mkdirp "^1.0.4"
