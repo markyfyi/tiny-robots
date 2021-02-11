@@ -1,3 +1,3 @@
-<h1>hyperlab template</h1>
+<h2>root</h2>
 
 <slot />

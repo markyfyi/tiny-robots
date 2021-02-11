@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 const { join, parse, dirname } = require("path");
-const { readFileSync, writeFileSync, readdirSync, existsSync } = require("fs");
+const {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  existsSync,
+  statSync,
+} = require("fs");
 const { createServer, Server } = require("http");
 
 const mkdirp = require("mkdirp");
@@ -24,6 +30,7 @@ const routesDirName = "routes";
 const exportDirName = "export";
 const htmlPath = "index.html";
 const rollupVirtualFilePrefix = "\x00virtual:";
+const appLayoutPath = "/_app.svelte";
 const routePath = "/_snowpack/pkg/hyperlab/runtime/Route.svelte.js";
 const routeModulePath = "hyperlab/runtime/Route.svelte";
 const resolvedRouteModulePath =
@@ -55,7 +62,10 @@ class Renderer {
     return this.server.getUrlForFile(join(appPath, "routes", path));
   }
 
-  async renderPage(path, layoutPath, { src, code, css, preloads } = {}) {
+  async renderPage(
+    path,
+    { src, code, css, preloads, layoutPath, appLayoutPath } = {}
+  ) {
     let script = "";
     if (preloads) {
       for (const preload of preloads) {
@@ -68,18 +78,26 @@ class Renderer {
       script += `<script type="module" src="${src}"></script>\n`;
     }
 
-    let layoutComponent;
-    if (layoutPath) {
-      const layoutUrl = this.server.getUrlForFile(
-        join(appPath, "routes", layoutPath)
-      );
-      layoutComponent = (await this.runtime.importModule(layoutUrl)).exports
-        .default;
-    }
-
     const pageUrl = this.server.getUrlForFile(join(appPath, "routes", path));
     const pageComponent = (await this.runtime.importModule(pageUrl)).exports
       .default;
+
+    let layoutComponent;
+    if (layoutPath) {
+      const url = this.server.getUrlForFile(
+        join(appPath, "routes", layoutPath)
+      );
+      layoutComponent = (await this.runtime.importModule(url)).exports.default;
+    }
+
+    let appLayoutComponent;
+    if (appLayoutPath) {
+      const url = this.server.getUrlForFile(
+        join(appPath, "routes", appLayoutPath)
+      );
+      appLayoutComponent = (await this.runtime.importModule(url)).exports
+        .default;
+    }
 
     const RouteComponent = (
       await this.runtime.importModule(resolvedRouteModulePath)
@@ -91,6 +109,7 @@ class Renderer {
       html: rootHtml,
     } = RouteComponent.render({
       pageComponent,
+      appLayoutComponent,
       layoutComponent,
       pageProps: {},
     });
@@ -123,73 +142,127 @@ async function devServer() {
   await renderer.init();
 
   createServer(async (req, res) => {
-    const [path] = req.url.split("?");
-    const pagePath = (!path || path === "/" ? "/index" : path) + ".svelte";
-    const layoutPath = join(dirname(pagePath), "_layout.svelte");
-    const hasLayout = existsSync(layoutPath);
-
-    const pageUrl = renderer.getUrl(pagePath);
-
-    let layoutUrl;
-    if (hasLayout) {
-      layoutUrl = renderer.getUrl(layoutPath);
+    function error404() {
+      res.statusCode = 404;
+      res.setHeader("Content-Type", "text/plain");
+      res.end("404: Not found");
     }
 
-    const code = /* js */ genEntry(pageUrl, layoutUrl, routePath);
+    const [path] = req.url.split("?");
+    const segments = path.slice(1).split("/");
+    const lastSegment = last(segments);
 
-    const page = await renderer.renderPage(pagePath, layoutPath, {
-      code,
-      src: undefined,
-      css: undefined,
-      preloads: undefined,
-    });
+    if (["_app", "_layout"].includes(lastSegment)) {
+      error404();
+      return;
+    }
 
-    res.setHeader("Content-Type", "text/html");
-    res.end(page);
+    try {
+      const filePath = join(appPath, routesDirName, path);
+      const isDir = existsSync(filePath) && statSync(filePath).isDirectory();
+      let pagePathBase = path;
+      if (!path || path === "/") {
+        pagePathBase = "index";
+      } else if (isDir) {
+        pagePathBase = join(path, "index");
+      } else if (last(path) === "/") {
+        pagePathBase = path.slice(0, -1);
+      }
+      const pagePath = pagePathBase + ".svelte";
+
+      if (!existsSync(join(appPath, routesDirName, pagePath))) {
+        error404();
+        return;
+      }
+
+      const layoutPath = join(dirname(pagePath), "_layout.svelte");
+
+      const pageUrl = renderer.getUrl(pagePath);
+
+      let layoutUrl;
+      const hasLayout = existsSync(join(appPath, routesDirName, layoutPath));
+      if (hasLayout) {
+        layoutUrl = renderer.getUrl(layoutPath);
+      }
+
+      let appLayoutUrl;
+      const hasAppLayout = existsSync(
+        join(appPath, routesDirName, appLayoutPath)
+      );
+      if (hasAppLayout) {
+        appLayoutUrl = renderer.getUrl(appLayoutPath);
+      }
+
+      const code = genEntry(pageUrl, layoutUrl, appLayoutUrl, routePath);
+
+      const page = await renderer.renderPage(pagePath, {
+        appLayoutPath,
+        layoutPath,
+        code,
+        src: undefined,
+        css: undefined,
+        preloads: undefined,
+      });
+
+      res.setHeader("Content-Type", "text/html");
+      res.statusCode = 200;
+      res.end(page);
+    } catch (error) {
+      console.error(error);
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "text/plain");
+      res.end("500: Oops, something broke!");
+      return;
+    }
   }).listen(8081);
 }
 
-function genEntry(pageUrl, layoutUrl, routeUrl) {
-  return `
-    import Route from "${routeUrl}";
-    import Page from '${pageUrl}';
-    
-    ${layoutUrl ? `import Layout from '${layoutUrl}'` : `const Layout = null;`};
+function genEntry(pageUrl, layoutUrl, appLayoutUrl, routeUrl) {
+  return `// @start: generated by hyperlab
+import Route from "${routeUrl}";
+import Page from '${pageUrl}';
+
+${layoutUrl ? `import Layout from '${layoutUrl}'` : `const Layout = null;`};
+${
+  appLayoutUrl
+    ? `import AppLayout from '${appLayoutUrl}'`
+    : `const AppLayout = null;`
+};
 
 
-    let route = new Route({
-      target: document.body,
-      hydrate: true,
-      props: {
-        layoutComponent: Layout,
-        pageComponent: Page,
-        pageProps: {},
-      }
-    });
-    `;
+let route = new Route({
+  target: document.body,
+  hydrate: true,
+  props: {
+    appLayoutComponent: AppLayout,
+    layoutComponent: Layout,
+    pageComponent: Page,
+  }
+});
+// @end`;
 }
 
 async function static({ dev } = {}) {
   const renderer = new Renderer();
   await renderer.init();
 
-  const fileNames = readdirSync(join(appPath, routesDirName)).filter(
-    (n) => n !== "_layout.svelte"
-  );
+  const pages = allPages(join(appPath, routesDirName));
 
-  const { entries, virtualEntries, fileNamesEntries } = fileNamesToEntries(
-    fileNames
+  const hasAppLayout = existsSync(join(appPath, routesDirName, "_app.svelte"));
+  const { entries, virtualEntries, fileNamesToEntries } = pagesToEntries(
+    pages,
+    hasAppLayout
   );
-  console.log({ entries });
-  mkdirp(join(appPath, exportDirName));
 
   const build = await rollup(
     rollupConfig({ fileNames: Object.keys(entries), dev, virtualEntries })
   );
 
+  mkdirp(join(appPath, exportDirName));
   const bundle = await build.write({
     hoistTransitiveImports: false,
-    entryFileNames: "entry-[hash].js",
+    compact: true,
+    entryFileNames: "[name].js",
     format: "es",
     dir: join(".", exportDirName, assetsDirName),
   });
@@ -201,16 +274,13 @@ async function static({ dev } = {}) {
   );
 
   await Promise.all(
-    fileNames.map(async function (fileName) {
-      const { name, dir } = parse(fileName);
-
-      const hasLayout = existsSync(
-        join(appPath, routesDirName, dir, "_layout.svelte")
-      );
+    pages.map(async function ({ name, dir, hasLayout, filePath }) {
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
-      const output = indexedOutput.get(fileNamesEntries[fileName]);
+      const output = indexedOutput.get(fileNamesToEntries[filePath]);
 
-      const page = await renderer.renderPage(fileName, layoutPath, {
+      const page = await renderer.renderPage(filePath, {
+        layoutPath,
+        appLayoutPath: hasAppLayout ? "_app.svelte" : null,
         src: join("/", assetsDirName, output.fileName),
         preloads: [
           ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
@@ -222,7 +292,10 @@ async function static({ dev } = {}) {
       });
 
       await mkdirp(join(".", exportDirName, dir));
-      writeFileSync(join(".", exportDirName, dir, `${name}.html`), page);
+      writeFileSync(
+        join(".", exportDirName, dir, name.replace(".svelte", ".html")),
+        page
+      );
     })
   );
 
@@ -230,27 +303,27 @@ async function static({ dev } = {}) {
   await renderer.stop();
 }
 
-function fileNamesToEntries(fileNames) {
+function pagesToEntries(pages, hasAppLayout) {
   const entries = {};
   const virtualEntries = {};
-  const fileNamesEntries = {};
-  for (const fileName of fileNames) {
-    const { dir, name } = parse(fileName);
+  const fileNamesToEntries = {};
+  for (const { dir, filePath, hasLayout } of pages) {
     const code = genEntry(
-      `./routes/${fileName}`,
-      `./routes/${join(dir, "_layout.svelte")}`,
+      join(".", routesDirName, filePath),
+      hasLayout ? join(".", routesDirName, dir, "_layout.svelte") : null,
+      hasAppLayout ? join(".", routesDirName, "_app.svelte") : null,
       routeModulePath
     );
 
-    entries[`${name}.js`] = fileName;
-    virtualEntries[`${name}.js`] = code;
-    fileNamesEntries[fileName] = `${name}.js`;
+    entries[filePath] = filePath;
+    virtualEntries[filePath] = code;
+    fileNamesToEntries[filePath] = filePath;
   }
 
   return {
     entries,
     virtualEntries,
-    fileNamesEntries,
+    fileNamesToEntries,
   };
 }
 
@@ -322,6 +395,32 @@ function snowpackConfig({ proxyDest }) {
   };
 }
 
+function allPages(root, dir = "") {
+  let pages = [];
+  const dirents = readdirSync(join(root, dir), { withFileTypes: true });
+  const hasLayout = !!dirents.find(
+    (dirent) => dirent.name === "_layout.svelte"
+  );
+  for (const dirent of dirents) {
+    if (dirent.name === "_layout.svelte") {
+      continue;
+    } else if (dirent.isDirectory()) {
+      for (const page of allPages(root, join(dir, dirent.name))) {
+        pages.push(page);
+      }
+    } else {
+      pages.push({
+        dir,
+        hasLayout,
+        filePath: join(dir, dirent.name),
+        name: dirent.name,
+      });
+    }
+  }
+
+  return pages;
+}
+
 async function main() {
   if (!command || command === "dev") {
     devServer();
@@ -332,6 +431,10 @@ async function main() {
   } else {
     console.error("Unrecognized command.");
   }
+}
+
+function last(xs) {
+  return xs[xs.length - 1];
 }
 
 main();

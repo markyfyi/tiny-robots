@@ -18,3 +18,8 @@
 - Filesystem-based layout pages
 - SSR mode
 - other svelte preprocessors?
+
+## Upstream bugs
+
+- https://github.com/rixo/svelte-hmr/pull/25
+- https://github.com/snowpackjs/snowpack/pull/2602
