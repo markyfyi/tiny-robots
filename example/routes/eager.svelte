@@ -13,6 +13,7 @@
 </script>
 
 <h3>eager prefetch</h3>
+
 <p>
   <em>
     {#if fetching}

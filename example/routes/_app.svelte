@@ -21,16 +21,15 @@
     padding: 0 12px;
   }
 
-  nav {
-    margin-bottom: 24px;
-  }
-
   ul {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   li {
+    margin-right: 12px;
+    margin-bottom: 12px;
     list-style-type: none;
   }
 </style>
