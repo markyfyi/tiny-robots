@@ -5,7 +5,7 @@
 ## Directory
 
 - `hyperlab`, the installable library.
-- `template`, an example app.
+- `example`, a runnable, reployable demo of what hyperlab can do.
 
 ## Upstream bugs
 
