@@ -43,7 +43,8 @@ export function start({ root, dev }) {
   });
 
   addEventListener("click", async (e) => {
-    if (e.target.nodeName !== "A" || !e.target.href) return;
+    // TODO: check if click came from an A tag somehow
+    if (!e.target.href) return;
     const url = new URL(e.target.href);
     if (url.origin === document.location.origin) {
       const nagvigated = navigate(url, true);

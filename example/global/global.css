@@ -1,7 +1,20 @@
-@import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Vollkorn:ital,wght@0,400;0,600;0,800;1,400;1,600&display=swap");
 
 body {
-  color: #fff;
-  background-color: #000;
-  font-family: "Merriweather", serif;
+  color: #c0e5ec;
+  background-color: #052b31;
+  font-family: Vollkorn, serif;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+a {
+  font-weight: 600;
+  color: #e8f3f2;
+}
+
+a:visited {
+  color: auto;
 }

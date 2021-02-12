@@ -7,6 +7,10 @@
 - `hyperlab`, the installable library.
 - `example`, a runnable, reployable demo of what hyperlab can do.
 
+## Known bugs
+
+- SPA router: index route URLs aren't generated correctly
+
 ## Upstream bugs
 
 - Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602

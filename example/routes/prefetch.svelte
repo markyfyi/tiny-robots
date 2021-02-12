@@ -12,6 +12,7 @@
 </script>
 
 <h3>prefetch</h3>
+
 <p>
   <em>
     {#if fetching}
@@ -21,5 +22,3 @@
     {/if}
   </em>
 </p>
-
-<a href="/">index</a>

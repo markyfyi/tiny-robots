@@ -22,5 +22,3 @@
     {/if}
   </em>
 </p>
-
-<a href="/">index</a>
