@@ -8,6 +8,6 @@
     "export-dev": "rm -fr export && hyperlab export --dev"
   },
   "dependencies": {
-    "hyperlab": "^0.0.16"
+    "hyperlab": "^0.0.17"
   }
 }

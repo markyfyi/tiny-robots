@@ -8,6 +8,7 @@
 ## Known bugs
 
 - SPA router: index links without trailing slashes break in dev
+- SPA router: race condition when fetching
 
 ## Upstream bugs
 
