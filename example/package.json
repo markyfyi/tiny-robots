@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "hyperlab",
     "export": "hyperlab export",
-    "export-dev": "hyperlab export --dev"
+    "export-dev": "rm -fr export && hyperlab export --dev"
   },
   "dependencies": {
     "hyperlab": "^0.0.14"

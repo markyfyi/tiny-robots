@@ -1,6 +1,6 @@
-# hyperlab
+# hyperlab (🏗 WIP)
 
-🏗 WIP
+> **Note:** HMR is broken until [this PR is accepted](https://github.com/snowpackjs/snowpack/pull/2602), so you'll need to patch `example/node_modules/@snowpack/plugin-svelte/plugin.js` with the code the above PR until it's merged.
 
 ## Directory
 
@@ -9,5 +9,4 @@
 
 ## Upstream bugs
 
-- https://github.com/rixo/svelte-hmr/pull/25
-- https://github.com/snowpackjs/snowpack/pull/2602
+- Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602

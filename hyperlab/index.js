@@ -16,6 +16,7 @@ const { rollup } = require("rollup");
 const mkdirp = require("mkdirp");
 const httpProxy = require("http-proxy");
 const htmlMinifier = require("html-minifier");
+// const { typescript: svelteTypescript } = require("svelte-preprocess");
 
 const svelte = require("rollup-plugin-svelte");
 const { terser } = require("rollup-plugin-terser");
@@ -114,6 +115,8 @@ class Renderer {
     let script = "";
     const p = JSON.stringify(prefetchedProps ?? {});
 
+    const { css: globalCss, js: globalJs } = getGlobalCode();
+
     if (preloads) {
       for (const preload of preloads) {
         script += `<link rel="modulepreload" href="${preload}">`;
@@ -128,6 +131,7 @@ start({ pageProps: ${p}, hydrate: true });
       script += `<script type="module">import { start } from '${src}';
 start({ pageProps: ${p}, hydrate: true });</script>`;
     }
+    script += `<script async defer>${globalJs}</script>`;
 
     let layoutComponent;
     if (layoutPath) {
@@ -158,7 +162,7 @@ start({ pageProps: ${p}, hydrate: true });</script>`;
 
     const headCode = pageHead;
 
-    const cssCode = await [getGlobalCss(), css, pageCss.code]
+    const cssCode = await [globalCss, css, pageCss.code]
       .filter((s) => s)
       .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
 
@@ -553,20 +557,23 @@ function allPages(root, dir = "") {
   return pages;
 }
 
-function getGlobalCss() {
+function getGlobalCode() {
   let css = "";
+  let js = "";
 
   try {
     if (existsSync(ap(globalAssetsPath))) {
       for (const name of readdirSync(ap(globalAssetsPath))) {
-        if (name.endsWith(".css")) {
+        if (extname(name) === ".css") {
           css += read(ap(globalAssetsPath, name));
+        } else if (extname(name) === ".js") {
+          js += read(ap(globalAssetsPath, name));
         }
       }
     }
   } catch (error) {}
 
-  return css;
+  return { css, js };
 }
 
 async function main() {

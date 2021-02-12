@@ -86,7 +86,6 @@ async function devNavigate({ root, pathname, push }) {
 }
 
 async function update(root, { eager, prefetch }, componentProps) {
-  console.log(root, { eager, prefetch }, componentProps);
   if (eager) {
     root.$set({
       ...(eager ? componentProps : {}),

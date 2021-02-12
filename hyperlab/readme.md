@@ -46,10 +46,13 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 #### WIP
 
-- Svelte TypeScript and markdown/MDsveX support.
+- TypeScript and markdown/MDsveX support.
 - Error pages.
 - Plain js pages.
-  - With jsdom support.
+  - With jsdom support for prerendering.
+- More HTML features.
+  - Partials.
+  - Merge head/body with template/layouts.
 
 #### Coming soon
 
@@ -63,6 +66,5 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
   - Vercel runtime integration.
   - Server hooks.
 - Better CSS extraction.
-
 - Slugs/catchall routes with URL rewrite generation for Vercel and Netlify.
 - React routes.

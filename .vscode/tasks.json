@@ -6,7 +6,7 @@
       "script": "export-dev",
       "path": "template/",
       "problemMatcher": [],
-      "label": "npm: export-dev - template",
+      "label": "example:export",
       "detail": "hyperlab export --dev",
       "group": {
         "kind": "build",
