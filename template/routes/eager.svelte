@@ -1,4 +1,5 @@
 <script context="module">
+  export const eager = true;
   export async function prefetch() {
     return new Promise((n) =>
       setTimeout(() => n({ wasPrefetched: true }), 1000)
@@ -8,10 +9,10 @@
 
 <script>
   export let wasPrefetched;
-  export let fetching;
+  export let fetching = false;
 </script>
 
-<h3>prefetch</h3>
+<h3>eager prefetch</h3>
 <p>
   <em>
     {#if fetching}

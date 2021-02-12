@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { join, dirname, extname } = require("path");
+const { join, dirname, extname, basename } = require("path");
 const {
   readFileSync,
   writeFileSync,
@@ -10,21 +10,23 @@ const {
 } = require("fs");
 const { createServer } = require("http");
 
-const mkdirp = require("mkdirp");
 const { startServer, loadConfiguration } = require("snowpack");
+const { rollup } = require("rollup");
+
+const mkdirp = require("mkdirp");
 const httpProxy = require("http-proxy");
 const htmlMinifier = require("html-minifier");
 
-const { rollup } = require("rollup");
 const svelte = require("rollup-plugin-svelte");
 const { terser } = require("rollup-plugin-terser");
-const resolve = require("@rollup/plugin-node-resolve").default;
+const { nodeResolve } = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const postcss = require("rollup-plugin-postcss");
 const copy = require("rollup-plugin-copy");
 const virtual = require("@rollup/plugin-virtual");
 
+// consts
 const assetsDirName = "assets";
 const routesDirName = "routes";
 const exportDirName = "export";
@@ -33,30 +35,55 @@ const rollupVirtualFilePrefix = "\x00virtual:";
 const globalAssetsPath = "global";
 const appLayoutPath = "/_app.svelte";
 const routePath = "/_snowpack/pkg/hyperlab/runtime/Route.svelte.js";
+const ssrAppSnowpackPath = "/_snowpack/pkg/hyperlab/runtime/app.js";
 const routeModulePath = "hyperlab/runtime/Route.svelte";
-const resolvedRouteModulePath =
-  "/node_modules/hyperlab/runtime/Route.svelte.js";
-
-const appPath = process.cwd();
-const [, , command, ...restArgs] = process.argv;
-const dev = restArgs.includes("--dev");
-
+const appModulePath = "hyperlab/runtime/app";
+const ssrRouteModulePath = "/node_modules/hyperlab/runtime/Route.svelte.js";
+const isSPA = true;
+const devServerPort = 8081;
+const nodeResolveOptions = {
+  dedupe: ["svelte"],
+};
+const sveltePluginOptions = {
+  compilerOptions: {
+    hydratable: true,
+  },
+};
 const minifyOptions = {
   collapseWhitespace: true,
   conservativeCollapse: true,
   minifyCSS: true,
 };
 
+const appPath = process.cwd();
+const [, , command, ...restArgs] = process.argv;
+const dev = restArgs.includes("--dev");
+
+function ap(...ps) {
+  return join(appPath, ...ps);
+}
+
+function apr(...ps) {
+  return join(appPath, routesDirName, ...ps);
+}
+
+function last(xs) {
+  return xs[xs.length - 1];
+}
+
+function read(f) {
+  return readFileSync(f, "utf-8");
+}
+
 class Renderer {
   async init() {
-    this.proxy = httpProxy.createServer({ target: "http://localhost:8081" });
+    this.proxy = httpProxy.createServer({
+      target: "http://localhost:" + devServerPort,
+    });
 
     const config = await loadConfiguration(
       snowpackConfig({ proxyDest: (req, res) => this.proxy.web(req, res) })
     );
-
-    const rollupPlugins = config.packageOptions.rollup.plugins;
-    // const rollupSveltePlugin = rollupPlugins.find((p) => p.name === "svelte");
 
     this.server = await startServer({
       config,
@@ -72,7 +99,7 @@ class Renderer {
 
   async renderPage(
     path,
-    { src, code, css, preloads, layoutPath, appLayoutPath } = {}
+    { src, code, css, preloads, layoutPath, appLayoutPath }
   ) {
     const pageUrl = this.server.getUrlForFile(apr(path));
     const { default: pageComponent, prefetch } = (
@@ -85,20 +112,21 @@ class Renderer {
     }
 
     let script = "";
-    if (prefetchedProps) {
-      script += `<script>__hyperlabPrefetchedProps = ${JSON.stringify(
-        prefetchedProps
-      )}</script>`;
-    }
+    const p = JSON.stringify(prefetchedProps ?? {});
+
     if (preloads) {
       for (const preload of preloads) {
         script += `<link rel="modulepreload" href="${preload}">`;
       }
     }
     if (code) {
-      script += `<script type="module">${code}</script>`;
+      script += `<script type="module">
+${code}
+start({ pageProps: ${p}, hydrate: true });
+</script>`;
     } else if (src) {
-      script += `<script type="module" src="${src}"></script>`;
+      script += `<script type="module">import { start } from '${src}';
+start({ pageProps: ${p}, hydrate: true });</script>`;
     }
 
     let layoutComponent;
@@ -114,9 +142,8 @@ class Renderer {
         .default;
     }
 
-    const RouteComponent = (
-      await this.runtime.importModule(resolvedRouteModulePath)
-    ).exports.default;
+    const RouteComponent = (await this.runtime.importModule(ssrRouteModulePath))
+      .exports.default;
 
     const {
       head: pageHead,
@@ -131,19 +158,11 @@ class Renderer {
 
     const headCode = pageHead;
 
-    // const cssCode = await (
-    //   await Promise.all(
-    //     [getGlobalCss(), css, pageCss.code]
-    //       .filter((s) => s)
-    //       .map((s) => cssnano.process(s))
-    //   )
-    // ).reduce((h, { css }) => h + `<style type="text/css">${css}</style>`, "");
-
     const cssCode = await [getGlobalCss(), css, pageCss.code]
       .filter((s) => s)
       .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
 
-    const baseHtml = readFileSync(ap(htmlPath)).toString();
+    const baseHtml = read(ap(htmlPath));
 
     const page = baseHtml
       .replace("<!-- @HEAD -->", headCode)
@@ -201,7 +220,7 @@ async function devServer() {
         if (existsSync(htmlPath)) {
           res.setHeader("Content-Type", "text/html");
           res.statusCode = 200;
-          res.end(readFileSync(htmlPath).toString());
+          res.end(read(htmlPath));
           return;
         }
 
@@ -225,7 +244,15 @@ async function devServer() {
         appLayoutUrl = renderer.getUrl(appLayoutPath);
       }
 
-      const code = genEntry(pageUrl, layoutUrl, appLayoutUrl, routePath);
+      const code = genEntry(
+        pageUrl,
+        layoutUrl,
+        appLayoutUrl,
+        routePath,
+        ssrAppSnowpackPath,
+        isSPA,
+        true
+      );
 
       const page = await renderer.renderPage(pagePath, {
         appLayoutPath,
@@ -247,13 +274,21 @@ async function devServer() {
       res.end();
       return;
     }
-  }).listen(8081);
+  }).listen(devServerPort);
 }
 
-function genEntry(pageUrl, layoutUrl, appLayoutUrl, routeUrl) {
+function genEntry(
+  pageUrl,
+  layoutUrl,
+  appLayoutUrl,
+  routeUrl,
+  appUrl,
+  isSPA,
+  isDev
+) {
   return `// @start: generated by hyperlab
 import Route from "${routeUrl}";
-import Page from '${pageUrl}';
+import * as page from '${pageUrl}';
 
 ${layoutUrl ? `import Layout from '${layoutUrl}'` : `const Layout = null;`};
 ${
@@ -262,17 +297,31 @@ ${
     : `const AppLayout = null;`
 };
 
+const start = ({ pageProps, hydrate }) => {
+  const root = new Route({
+    target: document.body,
+    hydrate,
+    props: {
+      ...routeProps(),
+      pageProps
+    }
+  });
 
-let route = new Route({
-  target: document.body,
-  hydrate: true,
-  props: {
-    appLayoutComponent: AppLayout,
-    layoutComponent: Layout,
-    pageComponent: Page,
-    pageProps: __hyperlabPrefetchedProps
+  ${
+    isSPA
+      ? `import("${appUrl}").then(m => m.start({ root, dev: ${!!isDev} }));`
+      : ""
   }
-});
+}
+
+const routeProps = () => ({
+  appLayoutComponent: AppLayout,
+  layoutComponent: Layout,
+  pageComponent: page.default,
+})
+
+export { page, start, routeProps };
+
 // @end`;
 }
 
@@ -301,30 +350,56 @@ async function static({ dev } = {}) {
     dir: join(".", exportDirName, assetsDirName),
   });
 
+  /**
+   * @param o import("rollup").OutputChunk>
+   * @returns {[string, import("rollup").OutputChunk]}
+   */
+  const mapOutput = (o) => [
+    o.facadeModuleId.replace(rollupVirtualFilePrefix, ""),
+    o,
+  ];
+
   const indexedOutput = new Map(
     bundle.output
       .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
-      .map((o) => [o.facadeModuleId.replace(rollupVirtualFilePrefix, ""), o])
+      .map(mapOutput)
   );
 
+  const manifest = {};
+
+  pages.map(({ path, name, dir, hasLayout, filePath }) => {
+    const output = indexedOutput.get(fileNamesToEntries[filePath]);
+    const outputFilePath = join("/", assetsDirName, output.fileName);
+    const preloadJs = (output?.imports ?? []).map((m) =>
+      join("/", assetsDirName, m)
+    );
+
+    manifest[path] = {
+      js: outputFilePath,
+      path,
+      preloadJs,
+    };
+  });
+
   await Promise.all(
-    pages.map(async function ({ name, dir, hasLayout, filePath }) {
+    pages.map(async function ({ path, name, dir, hasLayout, filePath }) {
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
+      const outputFilePath = join("/", assetsDirName, output.fileName);
+
+      const preloadJs = (output?.imports ?? []).map((m) =>
+        join("/", assetsDirName, m)
+      );
 
       let page;
       try {
         page = await renderer.renderPage(filePath, {
           layoutPath,
           appLayoutPath: hasAppLayout ? "_app.svelte" : null,
-          src: join("/", assetsDirName, output.fileName),
-          preloads: [
-            ...(output?.imports ?? []).map((m) => join("/", assetsDirName, m)),
-            join("/", assetsDirName, output.fileName),
-          ],
+          src: outputFilePath,
+          preloads: [...preloadJs, outputFilePath],
           code: undefined,
           css: undefined,
-          dev: false,
         });
       } catch (error) {
         console.error(`Export failed on page '${page}' with error:`, error);
@@ -337,6 +412,11 @@ async function static({ dev } = {}) {
         page
       );
     })
+  );
+
+  writeFileSync(
+    ap(exportDirName, assetsDirName, "manifest.json"),
+    JSON.stringify(manifest)
   );
 
   await build.close();
@@ -352,7 +432,10 @@ function pagesToEntries(pages, hasAppLayout) {
       join(".", routesDirName, filePath),
       hasLayout ? join(".", routesDirName, dir, "_layout.svelte") : null,
       hasAppLayout ? join(".", routesDirName, "_app.svelte") : null,
-      routeModulePath
+      routeModulePath,
+      appModulePath,
+      isSPA,
+      false
     );
 
     entries[filePath] = filePath;
@@ -370,6 +453,7 @@ function pagesToEntries(pages, hasAppLayout) {
 function rollupConfig({ fileNames, dev, virtualEntries }) {
   return {
     input: fileNames,
+
     plugins: [
       replace({
         "process.browser": true,
@@ -379,12 +463,11 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
       }),
       virtual(virtualEntries),
       svelte({
+        ...sveltePluginOptions,
         emitCss: false,
-        compilerOptions: {
-          hydratable: true,
-        },
       }),
-      resolve({
+      nodeResolve({
+        ...nodeResolveOptions,
         browser: true,
       }),
       commonjs(),
@@ -419,9 +502,7 @@ function snowpackConfig({ proxyDest }) {
       [
         "@snowpack/plugin-svelte",
         {
-          compilerOptions: {
-            hydratable: true,
-          },
+          ...sveltePluginOptions,
         },
       ],
     ],
@@ -438,7 +519,8 @@ function snowpackConfig({ proxyDest }) {
       },
     ],
     packageOptions: {
-      knownEntrypoints: [routeModulePath],
+      knownEntrypoints: [routeModulePath, appModulePath],
+      rollup: nodeResolveOptions,
     },
   };
 }
@@ -450,17 +532,16 @@ function allPages(root, dir = "") {
     (dirent) => dirent.name === "_layout.svelte"
   );
   for (const dirent of dirents) {
-    if (
-      ["_layout.svelte", "_app.svelte"].includes(dirent.name) ||
-      extname(dirent.name) !== ".svelte"
-    ) {
+    if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
       continue;
     } else if (dirent.isDirectory()) {
       for (const page of allPages(root, join(dir, dirent.name))) {
         pages.push(page);
       }
-    } else {
+    } else if (extname(dirent.name) === ".svelte") {
+      const baseName = basename(dirent.name, ".svelte");
       pages.push({
+        path: join("/", dir, baseName === "index" ? "." : baseName),
         dir,
         hasLayout,
         filePath: join(dir, dirent.name),
@@ -479,25 +560,13 @@ function getGlobalCss() {
     if (existsSync(ap(globalAssetsPath))) {
       for (const name of readdirSync(ap(globalAssetsPath))) {
         if (name.endsWith(".css")) {
-          css += readFileSync(ap(globalAssetsPath, name));
+          css += read(ap(globalAssetsPath, name));
         }
       }
     }
   } catch (error) {}
 
   return css;
-}
-
-function ap(...ps) {
-  return join(appPath, ...ps);
-}
-
-function apr(...ps) {
-  return join(appPath, routesDirName, ...ps);
-}
-
-function last(xs) {
-  return xs[xs.length - 1];
 }
 
 async function main() {
@@ -507,6 +576,7 @@ async function main() {
     try {
       await static({ dev });
     } catch (error) {
+      console.error(error);
       process.exit(1);
     }
     process.exit(0);
