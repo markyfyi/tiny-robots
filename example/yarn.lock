@@ -958,10 +958,10 @@ http-proxy@^1.18.1:
     follow-redirects "^1.0.0"
     requires-port "^1.0.0"
 
-hyperlab@^0.0.13:
-  version "0.0.13"
-  resolved "https://registry.yarnpkg.com/hyperlab/-/hyperlab-0.0.13.tgz#ae067927125214665a07374f8772aafc3c64eec5"
-  integrity sha512-0zBAl1mpq/JRVlhNHpMASm9OP5O4G9qpMSlObzcgA+bw0P3EU6+YiW5QhXnazct2LmK3/X6hy2LmJyOWa/gMlw==
+hyperlab@^0.0.14:
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/hyperlab/-/hyperlab-0.0.14.tgz#9a9d3810774195018e5efd18ab38b354298b7ed7"
+  integrity sha512-gs5jxJZbJ6ZQ59Ij+tEkKyS4oP0alwAaeRExsnMfZqH8/shPi9MABH5UOKFRNIMBonkVxrh0npXirNFe1bAKRg==
   dependencies:
     "@rollup/plugin-babel" "^5.2.3"
     "@rollup/plugin-commonjs" "^17.1.0"
