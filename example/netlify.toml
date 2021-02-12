@@ -1,8 +1,8 @@
 [build]
-  base = "template/"
+  base = "example/"
   publish = "export/"
   command = "yarn run export"
-  ignore = "git diff --quiet HEAD^ HEAD template/"
+  ignore = "git diff --quiet HEAD^ HEAD example/"
 
 [build.environment]
   NODE_VERSION="15.7.0"
