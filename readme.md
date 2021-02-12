@@ -1,7 +1,5 @@
 # hyperlab (🏗 WIP)
 
-> **Note:** HMR is broken until [this PR is accepted](https://github.com/snowpackjs/snowpack/pull/2602), so you'll need to patch `example/node_modules/@snowpack/plugin-svelte/plugin.js` with the code the above PR until it's merged.
-
 ## Directory
 
 - `hyperlab`, the installable library.
@@ -9,8 +7,8 @@
 
 ## Known bugs
 
-- SPA router: index route URLs aren't generated correctly
+- SPA router: index links without trailing slashes break in dev
 
 ## Upstream bugs
 
-- Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602
+- Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602. A workaround is hacked in.

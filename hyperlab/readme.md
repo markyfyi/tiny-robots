@@ -56,6 +56,11 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 #### Coming soon
 
+- "Get static routes" capability.
+- Generators for Netlify/Vercel/etc.
+  - "Deploy on X" buttons.
+  - Slugs, catchall routes and URL rewrites.
+  - Abstraction for lambdas.
 - SEO defaults.
   - Meta tags.
   - Social cards.
@@ -66,5 +71,4 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
   - Vercel runtime integration.
   - Server hooks.
 - Better CSS extraction.
-- Slugs/catchall routes with URL rewrite generation for Vercel and Netlify.
-- React routes.
+- Support for React pages.

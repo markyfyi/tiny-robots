@@ -12,13 +12,13 @@ async function manifest() {
 
 export function start({ root, dev }) {
   async function navigate(url, push) {
+    const isTrailingSlash = url.pathname[url.pathname.length - 1] === "/";
     const pathname =
-      url.pathname !== "/" && url.pathname[url.pathname.length - 1] === "/"
-        ? url.pathname.slice(0, -1)
-        : url.pathname;
+      (isTrailingSlash ? url.pathname.slice(0, -1) : url.pathname) || "/";
+    const fileName = isTrailingSlash ? url.pathname + "index" : url.pathname;
 
     if (!dev) {
-      if (push) history.pushState({}, undefined, pathname);
+      if (push) history.pushState({}, undefined, url.pathname);
       const entry = (await manifest())[pathname];
       if (entry) {
         const m = await import(entry.js);
@@ -32,7 +32,7 @@ export function start({ root, dev }) {
         return true;
       }
     } else {
-      await devNavigate({ root, pathname, push });
+      await devNavigate({ root, pathname, push, fileName });
 
       return true;
     }
@@ -59,7 +59,7 @@ export function start({ root, dev }) {
   }
 }
 
-async function devNavigate({ root, pathname, push }) {
+async function devNavigate({ root, pathname, push, fileName }) {
   if (push) history.pushState({}, undefined, pathname);
   const pathdir = pathname.split("/").slice(0, -1).join("/");
 
@@ -68,7 +68,7 @@ async function devNavigate({ root, pathname, push }) {
   });
 
   const [pageModule, layoutModule, appModule] = await Promise.all([
-    await import("/routes" + (pathname || "/index") + ".svelte.js"),
+    await import("/routes" + fileName + ".svelte.js"),
     await import(
       "/routes" + pathdir + "/" + "_layout" + ".svelte.js"
     ).catch(() => {}),

@@ -1,5 +1,5 @@
 <main>
-  <a href="/"><h1>hyperlab template</h1></a>
+  <h1><a href="/">hyperlab demo app</a></h1>
 
   <nav>
     <ul>

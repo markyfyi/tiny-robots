@@ -25,6 +25,7 @@ const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const postcss = require("rollup-plugin-postcss");
 const copy = require("rollup-plugin-copy");
+const svelteRollupPlugin = require("rollup-plugin-svelte");
 const virtual = require("@rollup/plugin-virtual");
 
 // consts
@@ -85,6 +86,21 @@ class Renderer {
     const config = await loadConfiguration(
       snowpackConfig({ proxyDest: (req, res) => this.proxy.web(req, res) })
     );
+
+    // HACK: remove me once the snowpack patch lands
+    const { rollup } = config.packageOptions;
+    rollup.plugins = rollup.plugins
+      .filter((p) => p.name !== "svelte")
+      .concat(
+        svelteRollupPlugin({
+          include: /\.svelte$/,
+          compilerOptions: {
+            dev: process.env.NODE_ENV !== "production",
+            hydratable: true,
+          },
+          emitCss: false,
+        })
+      );
 
     this.server = await startServer({
       config,
