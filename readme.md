@@ -1,14 +1,13 @@
-# hyperlab (🏗 WIP)
+# Tiny Robots, a web frmework [🏗 WIP]
 
 ## Directory
 
-- `hyperlab`, the installable library.
-- `example`, a runnable, reployable demo of what hyperlab can do.
+- `tiny-robots`, the installable library.
+- `example`, a runnable, reployable demo of what Tiny Robots can do.
 
 ## Known bugs
 
 - SPA router: index links without trailing slashes break in dev
-- SPA router: race condition when fetching
 
 ## Upstream bugs
 

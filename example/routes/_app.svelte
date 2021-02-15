@@ -1,5 +1,5 @@
 <main>
-  <h1><a href="/">hyperlab demo app</a></h1>
+  <h1><a href="/">tiny robots demo app</a></h1>
 
   <nav>
     <ul>
@@ -16,7 +16,7 @@
 
 <style>
   main {
-    max-width: 720px;
+    max-width: 640px;
     margin: 0 auto;
     padding: 0 12px;
   }

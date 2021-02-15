@@ -1,4 +1,4 @@
-# hyperlab
+# Tiny Robots
 
 🏗 WIP
 
@@ -23,13 +23,13 @@ A frontend build system and microframework for [Svelte](https://svelte.dev/) des
 ## Install
 
 ```shell
-yarn add hyperlab # or npm
+yarn add tiny-robots # or npm
 ```
 
 ## Develop
 
 ```shell
-yarn run hyperlab
+yarn run tiny-robots
 ```
 
 Runs your app with [Snowpack](https://www.snowpack.dev/).
@@ -37,7 +37,7 @@ Runs your app with [Snowpack](https://www.snowpack.dev/).
 ## Ship
 
 ```shell
-yarn run hyperlab export
+yarn run tiny-robots export
 ```
 
 Generates static HTML pages and a client JS bundle with [Rollup](https://rollupjs.org/guide/en/).
@@ -46,7 +46,8 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 #### WIP
 
-- TypeScript and markdown/MDsveX support.
+- TypeScript
+- markdown/MDsveX
 - Error pages.
 - Plain js pages.
   - With jsdom support for prerendering.
@@ -56,6 +57,10 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 #### Coming soon
 
+- Route asset preloads on page transition.
+  - Look at hrefs to other pages.
+- Image preloads.
+  - Add images to manifest.
 - "Get static routes" capability.
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.

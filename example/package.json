@@ -1,13 +1,13 @@
 {
-  "name": "hyperlab-app",
+  "name": "tiny-robots-app",
   "version": "0.0.4",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "hyperlab",
-    "export": "hyperlab export",
-    "export-dev": "rm -fr export && hyperlab export --dev"
+    "dev": "tiny-robots",
+    "export": "tiny-robots export",
+    "export-dev": "rm -fr export && tiny-robots export --dev"
   },
   "dependencies": {
-    "hyperlab": "^0.0.18"
+    "tiny-robots": "^0.0.18"
   }
 }

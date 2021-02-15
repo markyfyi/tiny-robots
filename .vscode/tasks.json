@@ -7,7 +7,7 @@
       "path": "template/",
       "problemMatcher": [],
       "label": "example:export",
-      "detail": "hyperlab export --dev",
+      "detail": "tiny-robots export --dev",
       "group": {
         "kind": "build",
         "isDefault": true

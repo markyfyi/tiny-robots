@@ -1,11 +1,12 @@
 {
-  "name": "hyperlab",
-  "version": "0.0.18",
+  "name": "tiny-robots",
+  "version": "0.0.0",
   "main": "index.js",
   "license": "UNLICENSED",
   "devDependencies": {},
   "bin": {
-    "hyperlab": "./index.js"
+    "tiny-robots": "./index.js",
+    "tr": "./index.js"
   },
   "dependencies": {
     "@rollup/plugin-babel": "^5.2.3",
