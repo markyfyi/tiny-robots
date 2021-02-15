@@ -1,27 +1,25 @@
-# Tiny Robots [🏗 WIP]
+Tiny Robots is a frontend build system and microframework for [Svelte](https://svelte.dev/) designed for developer joy.
 
-A frontend build system and microframework for [Svelte](https://svelte.dev/) designed for developer joy and velocity.
+_Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)_
 
 ### Features
 
-- 🔥 Ultrafast hot module replacement.
-- Static site generation.
-- Filesystem-based routing.
-  - Nested routes.
-  - Directory-based layout pages.
-  - Global app layout.
-- Inlined global/critical CSS.
-- Data-fetching hooks.
-- HTML rendering.
-- An SPA router.
-  - Preloads data.
-  - Passes loading/fetching flags to components.
-  - Components can wait on data or render eagerly.
+- 🔥 Ultrafast hot module replacement. Tiny Robots runs on [Snowpack](https://www.snowpack.dev/) in development, so hot updates stay fast no matter how large your app gets.
+- Hightly configurable universal data fetching. Routes can be eager or deferred.
+- Static site generation with dynaic data loading. Just do `yarn run tr export`.
+- Client side routing.
+- Filesystem-based routing, with directory-based layouts and global app layout.
+- Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
+- Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
 ## Install
 
 ```shell
-yarn add tiny-robots # or npm
+yarn add tiny-robots # or npm install tiny-robots
+mkdir routes # application routes go here
+mkdir static # static assets go here
+mkdir global # global css/js goes here
+touch index.html # HTML shell goes here
 ```
 
 ## Develop
@@ -42,14 +40,19 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 Adding `--dev` will produce a build for easier diagnostice, right now it just generates an unminified bundle, but more features may be added under the flag in the future.
 
-### Roadmap
+## Developer zone 🛠
 
 #### WIP
 
+- Unify dev and prod CSR.
+  - Dev needs a `manifest.json`
+- HTML shell improvements.
+  - Make the HTML shell optional (use a deafult one in the lib).
+  - Make magic comments optional (just inject content in head/body).
+- Live-reload on global CSS and JS changes.
 - TypeScript
-- markdown/MDsveX
 - Error pages.
-- Plain js pages.
+- Plain 'ol js pages.
   - With jsdom support for prerendering.
 - More HTML features.
   - Partials.

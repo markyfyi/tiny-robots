@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { join, dirname, extname, basename } = require("path");
+const { join, dirname, extname, basename, parse } = require("path");
 const {
   readFileSync,
   writeFileSync,
@@ -17,6 +17,7 @@ const mkdirp = require("mkdirp");
 const httpProxy = require("http-proxy");
 const htmlMinifier = require("html-minifier");
 // const { typescript: svelteTypescript } = require("svelte-preprocess");
+const { mdsvex } = require("mdsvex");
 
 const svelte = require("rollup-plugin-svelte");
 const { terser } = require("rollup-plugin-terser");
@@ -47,6 +48,8 @@ const nodeResolveOptions = {
   dedupe: ["svelte"],
 };
 const sveltePluginOptions = {
+  input: [".svelte", ".svx"],
+  preprocess: mdsvex(),
   compilerOptions: {
     hydratable: true,
   },
@@ -223,19 +226,26 @@ async function devServer() {
     }
 
     try {
-      const filePath = apr(path);
-      const isDir = existsSync(filePath) && statSync(filePath).isDirectory();
+      const fsFilePath = apr(path);
+      const isDir =
+        existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
       let pagePathBase = path;
+      let pageDirPath = dirname(fsFilePath);
       if (!path || path === "/") {
-        pagePathBase = "index";
+        pagePathBase = "/index";
+        pageDirPath = fsFilePath;
       } else if (isDir) {
         pagePathBase = join(path, "index");
+        pageDirPath = fsFilePath;
       } else if (last(path) === "/") {
         pagePathBase = path.slice(0, -1);
       }
-      const pagePath = pagePathBase + ".svelte";
 
-      if (!existsSync(apr(pagePath))) {
+      const files = readdirSync(pageDirPath);
+      const base = basename(pagePathBase);
+      const fileName = files.find((f) => f.startsWith(base));
+
+      if (!fileName) {
         const htmlPath = apr(pagePathBase + ".html");
         if (existsSync(htmlPath)) {
           res.setHeader("Content-Type", "text/html");
@@ -248,13 +258,17 @@ async function devServer() {
         return;
       }
 
-      const layoutPath = join(dirname(pagePath), "_layout.svelte");
-
+      const ext = extname(fileName);
+      const pagePath = `${pagePathBase}${ext}`;
       const pageUrl = renderer.getUrl(pagePath);
+      const maybeLayoutPath = join(pageDirPath, "_layout.svelte");
 
       let layoutUrl;
-      const hasLayout = existsSync(apr(layoutPath));
+      let layoutPath;
+      const hasLayout = existsSync(maybeLayoutPath);
       if (hasLayout) {
+        layoutPath = join(dirname(pagePathBase), "_layout.svelte");
+
         layoutUrl = renderer.getUrl(layoutPath);
       }
 
@@ -403,6 +417,7 @@ async function static({ dev } = {}) {
 
   await Promise.all(
     pages.map(async function ({ path, name, dir, hasLayout, filePath }) {
+      const baseName = parse(name).name;
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
       const outputFilePath = join("/", assetsDirName, output.fileName);
@@ -427,10 +442,7 @@ async function static({ dev } = {}) {
       }
 
       await mkdirp(join(".", exportDirName, dir));
-      writeFileSync(
-        join(".", exportDirName, dir, name.replace(".svelte", ".html")),
-        page
-      );
+      writeFileSync(join(".", exportDirName, dir, baseName + ".html"), page);
     })
   );
 
@@ -473,7 +485,7 @@ function pagesToEntries(pages, hasAppLayout) {
 function rollupConfig({ fileNames, dev, virtualEntries }) {
   return {
     input: fileNames,
-
+    preserveSymlinks: true,
     plugins: [
       replace({
         "process.browser": true,
@@ -483,7 +495,11 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
       }),
       virtual(virtualEntries),
       svelte({
-        ...sveltePluginOptions,
+        extensions: [".svelte", ".svx"],
+        preprocess: mdsvex(),
+        compilerOptions: {
+          hydratable: true,
+        },
         emitCss: false,
       }),
       nodeResolve({
@@ -552,14 +568,15 @@ function allPages(root, dir = "") {
     (dirent) => dirent.name === "_layout.svelte"
   );
   for (const dirent of dirents) {
+    const ext = extname(dirent.name);
     if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
       continue;
     } else if (dirent.isDirectory()) {
       for (const page of allPages(root, join(dir, dirent.name))) {
         pages.push(page);
       }
-    } else if (extname(dirent.name) === ".svelte") {
-      const baseName = basename(dirent.name, ".svelte");
+    } else if ([".svelte", ".svx"].includes(ext)) {
+      const baseName = parse(dirent.name).name;
       pages.push({
         path: join("/", dir, baseName === "index" ? "." : baseName),
         dir,
@@ -581,7 +598,7 @@ function getGlobalCode() {
     if (existsSync(ap(globalAssetsPath))) {
       for (const name of readdirSync(ap(globalAssetsPath))) {
         if (extname(name) === ".css") {
-          css += read(ap(globalAssetsPath, name));
+          css += "\n" + read(ap(globalAssetsPath, name));
         } else if (extname(name) === ".js") {
           js += read(ap(globalAssetsPath, name));
         }

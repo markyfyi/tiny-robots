@@ -1,5 +1,5 @@
 <main>
-  <h1><a href="/">tiny robots demo app</a></h1>
+  <h1><a href="/">Tiny Robots</a></h1>
 
   <nav>
     <ul>
@@ -15,16 +15,30 @@
 </main>
 
 <style>
+  h1 {
+    text-align: center;
+  }
+
+  h1 a {
+    color: unset;
+    text-decoration: none;
+  }
+
   main {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 12px;
+    padding: 12px;
+  }
+
+  nav {
+    margin-bottom: 12px;
   }
 
   ul {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     flex-wrap: wrap;
+    padding: 0;
   }
 
   li {

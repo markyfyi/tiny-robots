@@ -2343,37 +2343,6 @@ tiny-emitter@^2.0.0:
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.1.0.tgz#1d1a56edfc51c43e863cbb5382a72330e3555423"
   integrity sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==
 
-tiny-robots@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/tiny-robots/-/tiny-robots-0.0.2.tgz#e7a69cb48646cd9cd580c8a669ee965421ae1036"
-  integrity sha512-j8qgHTSqPrBOBSjRk5VMzTRBlEf4OqMvegldq+ErAqZIhSu54rE9dzo8rw1mc/l4P9hDTSN6it44mFr90zCmZA==
-  dependencies:
-    "@rollup/plugin-babel" "^5.2.3"
-    "@rollup/plugin-commonjs" "^17.1.0"
-    "@rollup/plugin-node-resolve" "^11.1.1"
-    "@rollup/plugin-replace" "^2.3.4"
-    "@rollup/plugin-virtual" "^2.0.3"
-    "@snowpack/plugin-svelte" "^3.5.2"
-    "@tsconfig/svelte" "^1.0.10"
-    cssnano "^4.1.10"
-    html-minifier "^4.0.0"
-    http-proxy "^1.18.1"
-    mdsvex "^0.8.9"
-    mkdirp "^1.0.4"
-    postcss "^8.2.5"
-    rollup "^2.38.5"
-    rollup-plugin-copy "^3.3.0"
-    rollup-plugin-css-chunks "^2.0.2"
-    rollup-plugin-css-only "^3.1.0"
-    rollup-plugin-postcss "^4.0.0"
-    rollup-plugin-styles "^3.14.1"
-    rollup-plugin-terser "^7.0.2"
-    snowpack "^3.0.11"
-    svelte "^3.32.2"
-    svelte-check "^1.1.34"
-    svelte-preprocess "^4.6.8"
-    typescript "^4.1.5"
-
 to-fast-properties@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/to-fast-properties/-/to-fast-properties-2.0.0.tgz#dc5e698cbd079265bc73e0377681a4e4e83f616e"

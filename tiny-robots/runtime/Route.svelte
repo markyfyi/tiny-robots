@@ -7,7 +7,7 @@
   export let fetching;
 </script>
 
-{#if appLayoutComponent}
+{#if appLayoutComponent && layoutComponent}
   <svelte:component
     this="{appLayoutComponent}"
     loading="{loading}"
@@ -34,7 +34,20 @@
       />
     {/if}
   </svelte:component>
-{:else if layoutComponent}
+{:else if appLayoutComponent && !layoutComponent}
+  <svelte:component
+    this="{appLayoutComponent}"
+    loading="{loading}"
+    fetching="{fetching}"
+  >
+    <svelte:component
+      this="{pageComponent}"
+      {...pageProps}
+      loading="{loading}"
+      fetching="{fetching}"
+    />
+  </svelte:component>
+{:else if layoutComponent && !appLayoutComponent}
   <svelte:component
     this="{layoutComponent}"
     loading="{loading}"

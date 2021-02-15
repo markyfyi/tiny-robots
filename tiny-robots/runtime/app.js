@@ -45,7 +45,14 @@ export function start({ root, dev }) {
         return true;
       }
     } else {
-      await devNavigate({ root, pathname, push, fileName, id });
+      await devNavigate({
+        root,
+        pathname,
+        push,
+        fileName,
+        id,
+        isDir: isTrailingSlash,
+      });
 
       return true;
     }
@@ -72,19 +79,24 @@ export function start({ root, dev }) {
   }
 }
 
-async function devNavigate({ root, pathname, push, fileName, id }) {
+async function devNavigate({ root, pathname, push, fileName, id, isDir }) {
   if (push) history.pushState({}, undefined, pathname);
-  const pathdir = pathname.split("/").slice(0, -1).join("/");
 
   root.$set({
     loading: true,
   });
 
-  const [pageModule, layoutModule, appModule] = await Promise.all([
-    import("/routes" + fileName + ".svelte.js"),
-    import(
-      "/routes" + pathdir + "/" + "_layout" + ".svelte.js"
-    ).catch(() => {}),
+  const pathdir = isDir ? pathname : pathname.split("/").slice(0, -1).join("/");
+
+  const [
+    pageModule,
+    pageModuleAlt,
+    layoutModule,
+    appModule,
+  ] = await Promise.all([
+    import(`/routes${fileName}.svelte.js`).catch(() => {}),
+    import(`/routes${fileName}.svx.js`).catch(() => {}),
+    import(`/routes${pathdir}/_layout.svelte.js`).catch(() => {}),
     import(devAppRoute).catch(() => {}),
   ]);
 
@@ -92,7 +104,9 @@ async function devNavigate({ root, pathname, push, fileName, id }) {
     return;
   }
 
-  const Page = pageModule.default;
+  const pm = pageModule ?? pageModuleAlt;
+
+  const Page = pm.default;
 
   const componentProps = {
     pageComponent: Page,
@@ -100,9 +114,10 @@ async function devNavigate({ root, pathname, push, fileName, id }) {
     appComponent: appModule ? appModule.default : undefined,
   };
 
-  update(root, pageModule, componentProps, id);
+  update(root, pm, componentProps, id);
 }
 
+// DELETEME
 async function update(root, { eager, prefetch }, componentProps, id) {
   if (eager) {
     root.$set({
@@ -121,10 +136,12 @@ async function update(root, { eager, prefetch }, componentProps, id) {
     return;
   }
 
-  // if (push) history.replaceState({ prefetchedProps }, undefined, pathname);
-  root.$set({
+  const props = {
     ...(eager ? {} : componentProps),
     fetching: false,
     pageProps: prefetchedProps,
-  });
+  };
+
+  // if (push) history.replaceState({ prefetchedProps }, undefined, pathname);
+  root.$set(props);
 }
