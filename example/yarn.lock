@@ -2343,10 +2343,10 @@ tiny-emitter@^2.0.0:
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.1.0.tgz#1d1a56edfc51c43e863cbb5382a72330e3555423"
   integrity sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==
 
-tiny-robots@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/tiny-robots/-/tiny-robots-0.0.4.tgz#380367f7f2b56b12e953cde9e0d0d237d06af617"
-  integrity sha512-1jeGCcM4vgjH/rhvI6ocYzZLAVR3pyFC4YzXcC2HcGGcIh57cjdNXEQMBCHDQaKswxSRFpjhd2gWywESamaaCg==
+tiny-robots@^0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/tiny-robots/-/tiny-robots-0.0.5.tgz#7e23913215c100e152613d3961ebcca84660464d"
+  integrity sha512-iGfXjF4pf6ZAqmewfT1zulnaEbcC/M47bYOwThYH/29gyvaCLGnqSrkB2w9gE+Lc5HbEDCsa+N8REYFnFtPrmw==
   dependencies:
     "@rollup/plugin-babel" "^5.2.3"
     "@rollup/plugin-commonjs" "^17.1.0"

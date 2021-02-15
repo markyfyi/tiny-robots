@@ -12,17 +12,18 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 - Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
-### 📦 Install
+### 📦 1. Setup
 
 ```shell
 yarn add tiny-robots # or npm install tiny-robots
-mkdir routes # application routes go here
-mkdir static # static assets go here
-mkdir global # global css/js goes here
-touch index.html # HTML shell goes here
+mkdir routes && touch routes/index.svelte # your first route
+
+mkdir static # optional - static assets (images, fonts) go here
+touch index.html # optional - an HTML shell
+mkdir global # optional - global css/js files go here; they'll automatically be inlined
 ```
 
-### 👩🏽‍💻 Develop
+### 👩🏽‍💻 2. Develop
 
 ```shell
 yarn run tr
@@ -30,23 +31,20 @@ yarn run tr
 
 Runs your app with [Snowpack](https://www.snowpack.dev/).
 
-### 🚀 Ship
+### 🚀 3. Ship
 
 ```shell
 yarn run tr export
 ```
 
-Generates static HTML pages and a client JS bundle with [Rollup](https://rollupjs.org/guide/en/).
+Generates an `./export` directory containing production-ready static HTML pages and JS bundles using [Rollup](https://rollupjs.org/guide/en/).
 
-Adding `--dev` will produce a build for easier diagnostice, right now it just generates an unminified bundle, but more features may be added under the flag in the future.
+Adding `--dev` will produce a build for diagnostics. Presently, it generates an unminified bundle, but more features may be added under this flag in the future.
 
-## 🛠 WIP
+### 🛠 WIP
 
 #### Pending
 
-- HTML shell improvements.
-  - Make the HTML shell optional (use a deafult one in the lib).
-  - Make magic comments optional (just inject content in head/body).
 - Error pages.
 - Plain 'ol js pages.
   - With jsdom support for prerendering.
@@ -60,7 +58,6 @@ Adding `--dev` will produce a build for easier diagnostice, right now it just ge
 - More HTML features.
   - Partials.
   - Merge head/body with template/layouts.
-- Query params and other context in prefetch.
 - Image preloads.
   - Add images to manifest.
 - "Get static routes" capability.

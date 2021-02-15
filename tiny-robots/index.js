@@ -45,6 +45,20 @@ const ssrRouteModulePath = "/node_modules/tiny-robots/runtime/Route.svelte.js";
 const isSPA = true;
 const devServerPort = 8081;
 
+const defaultHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>app built by tiny robots</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+  </head>
+  <body></body>
+</html>
+`;
+
 const nodeResolveOptions = {
   dedupe: ["svelte"],
 };
@@ -185,7 +199,9 @@ start({ pageProps: ${p}, hydrate: true });</script>`;
       .filter((s) => s)
       .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
 
-    const baseHtml = read(ap(htmlPath));
+    const baseHtml = existsSync(ap(htmlPath))
+      ? read(ap(htmlPath))
+      : defaultHtml;
 
     const page = baseHtml
       .replace(`</head>`, [cssCode, script, headCode, "</head>"].join("\n"))

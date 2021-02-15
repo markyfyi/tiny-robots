@@ -8,3 +8,4 @@
 ## Upstream bugs
 
 - Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602. A workaround is hacked in.
+- mdsvex sometimes fails to validate components in dev. This is usually fixed by re-saving the file.
