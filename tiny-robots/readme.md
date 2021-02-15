@@ -2,7 +2,7 @@ Tiny Robots is a frontend build system and microframework for [Svelte](https://s
 
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
-### Features
+### 🌈 Features
 
 - 🔥 Ultrafast hot module replacement. Tiny Robots runs on [Snowpack](https://www.snowpack.dev/) in development, so hot updates stay fast no matter how large your app gets.
 - Hightly configurable universal data fetching. Routes can be eager or deferred.
@@ -12,7 +12,7 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 - Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
-## Install
+### 📦 Install
 
 ```shell
 yarn add tiny-robots # or npm install tiny-robots
@@ -22,7 +22,7 @@ mkdir global # global css/js goes here
 touch index.html # HTML shell goes here
 ```
 
-## Develop
+### 👩🏽‍💻 Develop
 
 ```shell
 yarn run tr
@@ -30,7 +30,7 @@ yarn run tr
 
 Runs your app with [Snowpack](https://www.snowpack.dev/).
 
-## Ship
+### 🚀 Ship
 
 ```shell
 yarn run tr export
@@ -40,9 +40,9 @@ Generates static HTML pages and a client JS bundle with [Rollup](https://rollupj
 
 Adding `--dev` will produce a build for easier diagnostice, right now it just generates an unminified bundle, but more features may be added under the flag in the future.
 
-## Developer zone 🛠
+## 🛠 WIP
 
-#### WIP
+#### Pending
 
 - HTML shell improvements.
   - Make the HTML shell optional (use a deafult one in the lib).

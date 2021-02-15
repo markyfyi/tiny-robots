@@ -24,13 +24,15 @@ export function start({ root, dev }) {
         ? url.pathname.slice(0, -1)
         : url.pathname) || "/";
 
+    const params = parseParams(url.search);
+
     const id = pendingIdCtr++;
     lastPendingId = id;
 
-    if (push) history.pushState({ id }, undefined, url.pathname);
+    if (push) history.pushState({ id }, undefined, url.href);
 
     if (dev) {
-      await __dev__navigate({ root, pathname, id });
+      await __dev__navigate({ root, pathname, id, params });
       return true;
     } else {
       const entry = (await manifest()).paths[pathname];
@@ -49,7 +51,7 @@ export function start({ root, dev }) {
 
         const props = routeProps();
 
-        await update(root, pageModule, props, id);
+        await update(root, pageModule, props, id, params);
         return true;
       }
     }
@@ -76,7 +78,7 @@ export function start({ root, dev }) {
   }
 }
 
-async function update(root, { eager, prefetch }, componentProps, id) {
+async function update(root, { eager, prefetch }, componentProps, id, params) {
   if (eager) {
     root.$set({
       ...(eager ? componentProps : {}),
@@ -87,7 +89,7 @@ async function update(root, { eager, prefetch }, componentProps, id) {
   let prefetchedProps = {};
 
   if (prefetch) {
-    prefetchedProps = await prefetch();
+    prefetchedProps = await prefetch({ params });
   }
 
   if (lastPendingId !== id) {
@@ -104,7 +106,7 @@ async function update(root, { eager, prefetch }, componentProps, id) {
   root.$set(props);
 }
 
-async function __dev__navigate({ root, pathname, id }) {
+async function __dev__navigate({ root, pathname, id, params }) {
   const manifest = await devManifest();
   const entry = manifest.paths[pathname];
   if (lastPendingId !== id) {
@@ -134,6 +136,24 @@ async function __dev__navigate({ root, pathname, id }) {
       appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
     };
 
-    await update(root, pageModule, componentProps, id);
+    await update(root, pageModule, componentProps, id, params);
   }
+}
+
+function parseParams(querystring = "") {
+  // parse query string
+  const params = new URLSearchParams(querystring);
+
+  const obj = {};
+
+  // iterate over all keys
+  for (const key of params.keys()) {
+    if (params.getAll(key).length > 1) {
+      obj[key] = params.getAll(key);
+    } else {
+      obj[key] = params.get(key);
+    }
+  }
+
+  return obj;
 }

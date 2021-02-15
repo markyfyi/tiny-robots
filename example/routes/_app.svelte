@@ -1,10 +1,10 @@
 <main>
-  <h1><a href="/">Tiny Robots 🤖</a></h1>
+  <h1><a href="/">Tiny Robots</a></h1>
 
   <nav>
     <ul>
       <li><a href="/eager">eager pre-fetch</a></li>
-      <li><a href="/prefetch">blocking pre-fetch</a></li>
+      <li><a href="/blocking?arg=1">blocking pre-fetch</a></li>
       <li><a href="/path/">path</a></li>
       <li><a href="/secondary">secondary</a></li>
       <li><a href="/path/secondary">path secondary</a></li>

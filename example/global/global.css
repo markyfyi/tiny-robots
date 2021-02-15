@@ -16,3 +16,7 @@ a {
 a:visited {
   color: auto;
 }
+
+pre {
+  border-radius: 4px;
+}

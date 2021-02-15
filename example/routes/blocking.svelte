@@ -1,7 +1,7 @@
 <script context="module">
   export async function prefetch() {
     return new Promise((n) =>
-      setTimeout(() => n({ wasPrefetched: true }), 1000)
+      setTimeout(() => n({ wasPrefetched: true }), 300)
     );
   }
 </script>
@@ -11,7 +11,7 @@
   export let fetching;
 </script>
 
-<h3>prefetch</h3>
+<h3>blocking prefetch</h3>
 
 <p>
   <em>

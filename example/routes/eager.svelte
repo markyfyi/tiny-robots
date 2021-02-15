@@ -2,7 +2,7 @@
   export const eager = true;
   export async function prefetch() {
     return new Promise((n) =>
-      setTimeout(() => n({ wasPrefetched: true }), 1000)
+      setTimeout(() => n({ wasPrefetched: true }), 300)
     );
   }
 </script>

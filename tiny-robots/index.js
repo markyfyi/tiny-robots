@@ -44,17 +44,17 @@ const appModulePath = "tiny-robots/runtime/app";
 const ssrRouteModulePath = "/node_modules/tiny-robots/runtime/Route.svelte.js";
 const isSPA = true;
 const devServerPort = 8081;
+
 const nodeResolveOptions = {
   dedupe: ["svelte"],
 };
 const sveltePluginOptions = {
-  input: [".svelte", ".svx"],
   preprocess: mdsvex(),
   compilerOptions: {
     hydratable: true,
   },
 };
-const minifyOptions = {
+const htmlMinifyOptions = {
   collapseWhitespace: true,
   conservativeCollapse: true,
   minifyCSS: true,
@@ -119,7 +119,7 @@ class Renderer {
 
   async renderPage(
     path,
-    { src, code, css, preloads, layoutPath, appLayoutPath }
+    { src, code, css, preloads, layoutPath, appLayoutPath, dev }
   ) {
     const pageUrl = this.server.getUrlForFile(apr(path));
     const { default: pageComponent, prefetch } = (
@@ -128,7 +128,7 @@ class Renderer {
 
     let prefetchedProps = {};
     if (prefetch) {
-      prefetchedProps = await prefetch();
+      prefetchedProps = await prefetch({ static: true });
     }
 
     let script = "";
@@ -188,12 +188,14 @@ start({ pageProps: ${p}, hydrate: true });</script>`;
     const baseHtml = read(ap(htmlPath));
 
     const page = baseHtml
-      .replace("<!-- @HEAD -->", headCode)
-      .replace("<!-- @CSS -->", cssCode)
-      .replace("<!-- @HTML -->", rootHtml)
-      .replace("<!-- @SCRIPT -->", script);
+      .replace(`</head>`, [cssCode, script, headCode, "</head>"].join("\n"))
+      .replace(`<html>`, `<html>\n` + rootHtml);
 
-    const minifiedPage = htmlMinifier.minify(page, minifyOptions);
+    if (dev) {
+      return page;
+    }
+
+    const minifiedPage = htmlMinifier.minify(page, htmlMinifyOptions);
 
     return minifiedPage;
   }
@@ -307,6 +309,7 @@ async function devServer() {
         src: undefined,
         css: undefined,
         preloads: undefined,
+        dev: true,
       });
 
       res.setHeader("Content-Type", "text/html");
@@ -447,6 +450,7 @@ async function static({ dev } = {}) {
           preloads: [...preloadJs, outputFilePath],
           code: undefined,
           css: undefined,
+          dev,
         });
       } catch (error) {
         console.error(`Export failed on page '${page}' with error:`, error);
@@ -507,11 +511,8 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
       }),
       virtual(virtualEntries),
       svelte({
+        ...sveltePluginOptions,
         extensions: [".svelte", ".svx"],
-        preprocess: mdsvex(),
-        compilerOptions: {
-          hydratable: true,
-        },
         emitCss: false,
       }),
       nodeResolve({
@@ -519,7 +520,6 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
         browser: true,
       }),
       commonjs(),
-      // styles({ mode: "emit", namedExports: true, minimize: true }),
       postcss(),
       copy({
         targets: [
@@ -532,7 +532,7 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
             dest: ap("export"),
             flatten: false,
             transform: (html) => {
-              return htmlMinifier.minify(html.toString(), minifyOptions);
+              return htmlMinifier.minify(html.toString(), htmlMinifyOptions);
             },
           },
         ],
@@ -551,6 +551,7 @@ function snowpackConfig({ proxyDest }) {
         "@snowpack/plugin-svelte",
         {
           ...sveltePluginOptions,
+          input: [".svelte", ".svx"],
         },
       ],
     ],
