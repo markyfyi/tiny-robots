@@ -220,6 +220,24 @@ async function devServer() {
     const segments = path.slice(1).split("/");
     const lastSegment = last(segments);
 
+    let appLayoutUrl;
+    const hasAppLayout = existsSync(apr(appLayoutPath));
+    if (hasAppLayout) {
+      appLayoutUrl = renderer.getUrl(appLayoutPath);
+    }
+
+    if (path === "/assets/manifest") {
+      res.setHeader("Content-Type", "application/json");
+      res.statusCode = 200;
+      res.end(
+        JSON.stringify({
+          __dev__appLayoutUrl: appLayoutUrl,
+          paths: devManifest(),
+        })
+      );
+      return;
+    }
+
     if (["_app", "_layout"].includes(lastSegment)) {
       error404();
       return;
@@ -270,12 +288,6 @@ async function devServer() {
         layoutPath = join(dirname(pagePathBase), "_layout.svelte");
 
         layoutUrl = renderer.getUrl(layoutPath);
-      }
-
-      let appLayoutUrl;
-      const hasAppLayout = existsSync(apr(appLayoutPath));
-      if (hasAppLayout) {
-        appLayoutUrl = renderer.getUrl(appLayoutPath);
       }
 
       const code = genEntry(
@@ -401,7 +413,7 @@ async function static({ dev } = {}) {
 
   const manifest = {};
 
-  pages.map(({ path, name, dir, hasLayout, filePath }) => {
+  pages.map(({ path, filePath }) => {
     const output = indexedOutput.get(fileNamesToEntries[filePath]);
     const outputFilePath = join("/", assetsDirName, output.fileName);
     const preloadJs = (output?.imports ?? []).map((m) =>
@@ -448,7 +460,7 @@ async function static({ dev } = {}) {
 
   writeFileSync(
     ap(exportDirName, assetsDirName, "manifest.json"),
-    JSON.stringify(manifest)
+    JSON.stringify({ paths: manifest })
   );
 
   await build.close();
@@ -588,6 +600,24 @@ function allPages(root, dir = "") {
   }
 
   return pages;
+}
+
+function devManifest() {
+  const pages = allPages(apr("."));
+
+  const manifest = {};
+
+  for (const { path, filePath, hasLayout, dir } of pages) {
+    manifest[path] = {
+      path,
+      js: join("/", routesDirName, filePath + ".js"),
+      __dev__layoutJs: hasLayout
+        ? join("/", routesDirName, dir, "_layout.svelte.js")
+        : null,
+    };
+  }
+
+  return manifest;
 }
 
 function getGlobalCode() {

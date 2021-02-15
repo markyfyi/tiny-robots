@@ -1,6 +1,6 @@
 Tiny Robots is a frontend build system and microframework for [Svelte](https://svelte.dev/) designed for developer joy.
 
-_Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)_
+_Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
 ### Features
 
@@ -44,24 +44,23 @@ Adding `--dev` will produce a build for easier diagnostice, right now it just ge
 
 #### WIP
 
-- Unify dev and prod CSR.
-  - Dev needs a `manifest.json`
 - HTML shell improvements.
   - Make the HTML shell optional (use a deafult one in the lib).
   - Make magic comments optional (just inject content in head/body).
-- Live-reload on global CSS and JS changes.
-- TypeScript
 - Error pages.
 - Plain 'ol js pages.
   - With jsdom support for prerendering.
-- More HTML features.
-  - Partials.
-  - Merge head/body with template/layouts.
 
 #### Coming soon
 
+- Live-reload on global CSS and JS changes.
+- TypeScript.
 - Route asset preloads on page transition.
   - Look at hrefs to other pages.
+- More HTML features.
+  - Partials.
+  - Merge head/body with template/layouts.
+- Query params and other context in prefetch.
 - Image preloads.
   - Add images to manifest.
 - "Get static routes" capability.

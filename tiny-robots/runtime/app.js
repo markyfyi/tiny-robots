@@ -1,7 +1,7 @@
 // TODO: handle errors
 
 const manifestUrl = "/assets/manifest.json";
-const devAppRoute = "/routes/_app.svelte.js";
+const devManifestUrl = "/assets/manifest";
 
 let lastPendingId;
 let pendingIdCtr = 0;
@@ -13,22 +13,32 @@ async function manifest() {
   return cachedManifest;
 }
 
+async function devManifest() {
+  return await (await fetch(devManifestUrl)).json();
+}
+
 export function start({ root, dev }) {
   async function navigate(url, push) {
-    const isTrailingSlash = url.pathname[url.pathname.length - 1] === "/";
     const pathname =
-      (isTrailingSlash ? url.pathname.slice(0, -1) : url.pathname) || "/";
-    const fileName = isTrailingSlash ? url.pathname + "index" : url.pathname;
+      (url.pathname[url.pathname.length - 1] === "/"
+        ? url.pathname.slice(0, -1)
+        : url.pathname) || "/";
 
     const id = pendingIdCtr++;
     lastPendingId = id;
 
-    if (!dev) {
-      if (push) history.pushState({}, undefined, url.pathname);
-      const entry = (await manifest())[pathname];
+    if (push) history.pushState({ id }, undefined, url.pathname);
+
+    if (dev) {
+      await __dev__navigate({ root, pathname, id });
+      return true;
+    } else {
+      const entry = (await manifest()).paths[pathname];
+
       if (lastPendingId !== id) {
         return;
       }
+
       if (entry) {
         const m = await import(entry.js);
         if (lastPendingId !== id) {
@@ -37,24 +47,11 @@ export function start({ root, dev }) {
 
         const { routeProps, page: pageModule } = m;
 
-        // if (push) {
-        //   history.replaceState({ prefetchedProps }, undefined, pathname);
-        // }
+        const props = routeProps();
 
-        update(root, pageModule, routeProps(), id);
+        await update(root, pageModule, props, id);
         return true;
       }
-    } else {
-      await devNavigate({
-        root,
-        pathname,
-        push,
-        fileName,
-        id,
-        isDir: isTrailingSlash,
-      });
-
-      return true;
     }
   }
 
@@ -79,45 +76,6 @@ export function start({ root, dev }) {
   }
 }
 
-async function devNavigate({ root, pathname, push, fileName, id, isDir }) {
-  if (push) history.pushState({}, undefined, pathname);
-
-  root.$set({
-    loading: true,
-  });
-
-  const pathdir = isDir ? pathname : pathname.split("/").slice(0, -1).join("/");
-
-  const [
-    pageModule,
-    pageModuleAlt,
-    layoutModule,
-    appModule,
-  ] = await Promise.all([
-    import(`/routes${fileName}.svelte.js`).catch(() => {}),
-    import(`/routes${fileName}.svx.js`).catch(() => {}),
-    import(`/routes${pathdir}/_layout.svelte.js`).catch(() => {}),
-    import(devAppRoute).catch(() => {}),
-  ]);
-
-  if (lastPendingId !== id) {
-    return;
-  }
-
-  const pm = pageModule ?? pageModuleAlt;
-
-  const Page = pm.default;
-
-  const componentProps = {
-    pageComponent: Page,
-    layoutComponent: layoutModule ? layoutModule.default : undefined,
-    appComponent: appModule ? appModule.default : undefined,
-  };
-
-  update(root, pm, componentProps, id);
-}
-
-// DELETEME
 async function update(root, { eager, prefetch }, componentProps, id) {
   if (eager) {
     root.$set({
@@ -144,4 +102,38 @@ async function update(root, { eager, prefetch }, componentProps, id) {
 
   // if (push) history.replaceState({ prefetchedProps }, undefined, pathname);
   root.$set(props);
+}
+
+async function __dev__navigate({ root, pathname, id }) {
+  const manifest = await devManifest();
+  const entry = manifest.paths[pathname];
+  if (lastPendingId !== id) {
+    return;
+  }
+
+  if (entry) {
+    const pageModule = await import(entry.js);
+
+    let layoutModule;
+    if (entry.__dev__layoutJs) {
+      layoutModule = await import(entry.__dev__layoutJs);
+    }
+
+    let appLayoutModule;
+    if (manifest.__dev__appLayoutUrl) {
+      appLayoutModule = await import(manifest.__dev__appLayoutUrl);
+    }
+
+    if (lastPendingId !== id) {
+      return;
+    }
+
+    const componentProps = {
+      pageComponent: pageModule.default,
+      layoutComponent: layoutModule ? layoutModule.default : undefined,
+      appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
+    };
+
+    await update(root, pageModule, componentProps, id);
+  }
 }
