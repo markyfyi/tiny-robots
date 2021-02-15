@@ -27,7 +27,7 @@ yarn add tiny-robots # or npm
 ## Develop
 
 ```shell
-yarn run tiny-robots
+yarn run tr
 ```
 
 Runs your app with [Snowpack](https://www.snowpack.dev/).
@@ -35,10 +35,12 @@ Runs your app with [Snowpack](https://www.snowpack.dev/).
 ## Ship
 
 ```shell
-yarn run tiny-robots export
+yarn run tr export
 ```
 
 Generates static HTML pages and a client JS bundle with [Rollup](https://rollupjs.org/guide/en/).
+
+Adding `--dev` will produce a build for easier diagnostice, right now it just generates an unminified bundle, but more features may be added under the flag in the future.
 
 ### Roadmap
 
