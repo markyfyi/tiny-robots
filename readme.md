@@ -1,4 +1,4 @@
-# Tiny Robots, a web frmework [🏗 WIP]
+# Tiny Robots, a minimal web framework that gets out of your way [🏗 WIP]
 
 ## Directory
 
