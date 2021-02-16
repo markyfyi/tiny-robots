@@ -6,7 +6,7 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 
 - 🔥 Ultrafast hot module replacement. Tiny Robots runs on [Snowpack](https://www.snowpack.dev/) in development, so hot updates stay fast no matter how large your app gets.
 - Hightly configurable universal data fetching. Routes can be eager or deferred.
-- Static site generation with dynaic data loading. Just do `yarn run tr export`.
+- Static site generation with dynaic data loading. Just run `yarn run tr export`.
 - Client side routing.
 - Filesystem-based routing, with directory-based layouts and global app layout.
 - Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
