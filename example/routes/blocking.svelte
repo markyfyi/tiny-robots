@@ -13,6 +13,8 @@
 
 <h3>blocking prefetch</h3>
 
+<p>This page <strong>will</strong> block when navigated to on the client.</p>
+
 <p>
   <em>
     {#if fetching}

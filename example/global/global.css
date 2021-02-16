@@ -4,7 +4,7 @@ body {
   font-family: Vollkorn, serif;
 }
 
-h1 {
+h1 a {
   font-weight: 800;
 }
 
@@ -20,4 +20,9 @@ a:visited {
 
 pre {
   border-radius: 4px;
+}
+
+hr {
+  border: none;
+  border-bottom: 1px #92a5a8 solid;
 }

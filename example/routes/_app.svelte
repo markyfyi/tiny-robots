@@ -1,6 +1,12 @@
 <main>
-  <h1><a href="/">Tiny Robots</a></h1>
+  <h1>
+    <a href="/">Tiny Robots</a>
+  </h1>
 
+  <slot />
+
+  <hr />
+  <h3>Sample pages</h3>
   <nav>
     <ul>
       <li><a href="/eager">eager pre-fetch</a></li>
@@ -10,8 +16,6 @@
       <li><a href="/path/secondary">path secondary</a></li>
     </ul>
   </nav>
-
-  <slot />
 </main>
 
 <style>

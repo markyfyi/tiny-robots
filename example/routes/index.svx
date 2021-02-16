@@ -1,16 +1,27 @@
-Tiny Robots is a frontend build system and microframework for [Svelte](https://svelte.dev/) designed for developer joy.
+Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/) designed to help you build and ship ambitious web apps expeditiously.
+
+Tiny robots aims to:
+- Get out of your way.
+- Do the grunt work and write the boring code for you.
+- Be predictable, and easy to debug when it's not.
+- Empower code authors with a near-instant feedback loop for development.
+- Generate extremely fast, performant bundles.
+- Invest in [ES modules](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/) and the future of web technologies.
+- Embrace [Svelte's philosphy](https://svelte.dev/blog/write-less-code) whilst adding as little runtime overhead as possible.
 
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
 ### Features 🌈 
 
-- 🔥 Ultrafast hot module replacement. Tiny Robots runs on [Snowpack](https://www.snowpack.dev/) in development, so hot updates stay fast no matter how large your app gets.
-- Hightly configurable universal data fetching. Routes can be eager or deferred.
-- Static site generation with dynaic data loading. Just run `yarn run tr export`.
+- 🔥 Ultrafast hot module replacement. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot updates stay fast no matter how large your app gets.
+- Hightly configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
+- Static site generation with dynamic data loading. Just run `yarn run tr export`.
 - Client side routing.
 - Filesystem-based routing, with directory-based layouts and global app layout.
-- Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
+- Global CSS/JS support for stuff like vendor code or analytics. Just create a `global` directory and all of it's contents will get inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
+
+---
 
 ### 1. Setup 📦
 
@@ -45,7 +56,9 @@ Generates an `./export` directory containing production-ready static HTML pages 
 
 Adding `--dev` will produce a build for diagnostics. Presently, it generates an unminified bundle, but more features may be added under this flag in the future.
 
-### WIP 🏗
+---
+
+### WIP/Roadmap 🏗
 
 #### Pending
 
@@ -80,3 +93,4 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
   - Server hooks.
 - Better CSS extraction.
 - Support for React pages.
+- esbuild for production.
