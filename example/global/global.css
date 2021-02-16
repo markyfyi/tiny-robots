@@ -1,6 +1,6 @@
 body {
-  color: #c0e5ec;
-  background-color: #052b31;
+  background-color: #c3d5d8;
+  color: #022125;
   font-family: Vollkorn, serif;
 }
 
@@ -10,7 +10,8 @@ h1 {
 
 a {
   font-weight: 600;
-  color: #e8f3f2;
+  color: #08545e;
+  /* color: #e8f3f2; */
 }
 
 a:visited {

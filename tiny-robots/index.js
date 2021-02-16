@@ -45,7 +45,7 @@ const ssrRouteModulePath = "/node_modules/tiny-robots/runtime/Route.svelte.js";
 const isSPA = true;
 const devServerPort = 8081;
 
-const defaultHtml = `<!DOCTYPE html>
+const defaultHtmlLayout = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -133,7 +133,7 @@ class Renderer {
 
   async renderPage(
     path,
-    { src, code, css, preloads, layoutPath, appLayoutPath, dev }
+    { src, code, preloads, layoutPath, appLayoutPath, dev, hot }
   ) {
     const pageUrl = this.server.getUrlForFile(apr(path));
     const { default: pageComponent, prefetch } = (
@@ -144,12 +144,11 @@ class Renderer {
     if (prefetch) {
       prefetchedProps = await prefetch({ static: true });
     }
+    const stringifiedProps = JSON.stringify(prefetchedProps ?? {});
+
+    const globalFiles = getGlobalFiles();
 
     let script = "";
-    const p = JSON.stringify(prefetchedProps ?? {});
-
-    const { css: globalCss, js: globalJs } = getGlobalCode();
-
     if (preloads) {
       for (const preload of preloads) {
         script += `<link rel="modulepreload" href="${preload}">`;
@@ -158,13 +157,18 @@ class Renderer {
     if (code) {
       script += `<script type="module">
 ${code}
-start({ pageProps: ${p}, hydrate: true });
+start({ pageProps: ${stringifiedProps}, hydrate: true });
 </script>`;
     } else if (src) {
-      script += `<script type="module">import { start } from '${src}';
-start({ pageProps: ${p}, hydrate: true });</script>`;
+      script += `<script type="module">
+import { start } from '${src}';
+start({ pageProps: ${stringifiedProps}, hydrate: true });
+</script>`;
     }
-    script += `<script async defer>${globalJs}</script>`;
+
+    for (const { code } of globalFiles.js) {
+      script += `<script>${code}</script>`;
+    }
 
     let layoutComponent;
     if (layoutPath) {
@@ -195,17 +199,37 @@ start({ pageProps: ${p}, hydrate: true });</script>`;
 
     const headCode = pageHead;
 
-    const cssCode = await [globalCss, css, pageCss.code]
+    const cssCode = [...globalFiles.css.map(({ code }) => code), pageCss.code]
       .filter((s) => s)
-      .reduce((h, s) => h + `<style type="text/css">${s}</style>`, "");
+      .reduce(
+        (h, s) =>
+          h +
+          `<style ${hot ? `data-style-dev ` : ""}type="text/css">${s}</style>`,
+        ""
+      );
+
+    let devHotGlobalCss;
+    if (hot) {
+      const cssImports = globalFiles.css
+        .map(({ path }) => `import "${path}.proxy.js";`)
+        .join("\n");
+
+      devHotGlobalCss = `<script type="module">
+${cssImports}
+document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
+</script>`;
+    }
 
     const baseHtml = existsSync(ap(htmlPath))
       ? read(ap(htmlPath))
-      : defaultHtml;
+      : defaultHtmlLayout;
 
     const page = baseHtml
-      .replace(`</head>`, [cssCode, script, headCode, "</head>"].join("\n"))
-      .replace(`<html>`, `<html>\n` + rootHtml);
+      .replace(
+        `<head>`,
+        [cssCode, script, headCode, devHotGlobalCss].join("\n") + "<head>"
+      )
+      .replace(`<body>`, `<body>\n` + rootHtml);
 
     if (dev) {
       return page;
@@ -323,9 +347,9 @@ async function devServer() {
         layoutPath,
         code,
         src: undefined,
-        css: undefined,
         preloads: undefined,
         dev: true,
+        hot: true,
       });
 
       res.setHeader("Content-Type", "text/html");
@@ -416,7 +440,7 @@ async function static({ dev } = {}) {
   });
 
   /**
-   * @param o import("rollup").OutputChunk>
+   * @param o {import("rollup").OutputChunk>}
    * @returns {[string, import("rollup").OutputChunk]}
    */
   const mapOutput = (o) => [
@@ -465,7 +489,6 @@ async function static({ dev } = {}) {
           src: outputFilePath,
           preloads: [...preloadJs, outputFilePath],
           code: undefined,
-          css: undefined,
           dev,
         });
       } catch (error) {
@@ -637,21 +660,25 @@ function devManifest() {
   return manifest;
 }
 
-function getGlobalCode() {
-  let css = "";
-  let js = "";
+function getGlobalFiles() {
+  let css = [];
+  let js = [];
 
-  try {
-    if (existsSync(ap(globalAssetsPath))) {
-      for (const name of readdirSync(ap(globalAssetsPath))) {
-        if (extname(name) === ".css") {
-          css += "\n" + read(ap(globalAssetsPath, name));
-        } else if (extname(name) === ".js") {
-          js += read(ap(globalAssetsPath, name));
-        }
+  if (existsSync(ap(globalAssetsPath))) {
+    for (const name of readdirSync(ap(globalAssetsPath))) {
+      if (extname(name) === ".css") {
+        css.push({
+          code: read(ap(globalAssetsPath, name)),
+          path: join("/", globalAssetsPath, name),
+        });
+      } else if (extname(name) === ".js") {
+        js.push({
+          code: read(ap(globalAssetsPath, name)),
+          path: join("/", globalAssetsPath, name),
+        });
       }
     }
-  } catch (error) {}
+  }
 
   return { css, js };
 }

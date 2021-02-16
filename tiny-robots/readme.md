@@ -45,16 +45,15 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
 
 #### Pending
 
-- Error pages.
+- Error pages and catch screens.
 - Plain 'ol js pages.
   - With jsdom support for prerendering.
+- Remove console warnings.
 
 #### Coming soon
 
 - Live-reload on global CSS and JS changes.
 - TypeScript.
-- Route asset preloads on page transition.
-  - Look at hrefs to other pages.
 - More HTML features.
   - Partials.
   - Merge head/body with template/layouts.
@@ -69,6 +68,8 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
   - Meta tags.
   - Social cards.
   - Sitemaps.
+- Route asset preloads on page transition.
+  - Look at hrefs to other pages.
 - PWA/service worker.
 - Per-component rehydration opt-out (i.e. server-only components).
 - SSR mode.

@@ -1,1 +1,1 @@
-// global js here
+/** global js file */
