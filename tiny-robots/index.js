@@ -13,7 +13,7 @@ const { createServer } = require("http");
 const { startServer, loadConfiguration } = require("snowpack");
 const { rollup } = require("rollup");
 
-const mkdirp = require("mkdirp");
+const { sync: mkdirp } = require("mkdirp");
 const httpProxy = require("http-proxy");
 const htmlMinifier = require("html-minifier");
 // const { typescript: svelteTypescript } = require("svelte-preprocess");
@@ -36,7 +36,7 @@ const exportDirName = "export";
 const htmlPath = "index.html";
 const rollupVirtualFilePrefix = "\x00virtual:";
 const globalAssetsPath = "global";
-const appLayoutPath = "/_app.svelte";
+const appLayoutModulePath = "/_app.svelte";
 const routePath = "/_snowpack/pkg/tiny-robots/runtime/Route.svelte.js";
 const ssrAppSnowpackPath = "/_snowpack/pkg/tiny-robots/runtime/app.js";
 const routeModulePath = "tiny-robots/runtime/Route.svelte";
@@ -57,6 +57,11 @@ const defaultHtmlLayout = `<!DOCTYPE html>
   </head>
   <body></body>
 </html>
+`;
+
+const indexTemplate = /* html */ `<div style="width: 640px; margin: 0 auto;">
+  <h1 style="text-align: center;">tiny robots app 🤖</h1>
+</div>
 `;
 
 const nodeResolveOptions = {
@@ -263,9 +268,11 @@ async function devServer() {
     const lastSegment = last(segments);
 
     let appLayoutUrl;
-    const hasAppLayout = existsSync(apr(appLayoutPath));
+    let appLayoutPath;
+    const hasAppLayout = existsSync(apr(appLayoutModulePath));
     if (hasAppLayout) {
-      appLayoutUrl = renderer.getUrl(appLayoutPath);
+      appLayoutPath = appLayoutModulePath;
+      appLayoutUrl = renderer.getUrl(appLayoutModulePath);
     }
 
     if (path === "/assets/manifest") {
@@ -328,7 +335,6 @@ async function devServer() {
       const hasLayout = existsSync(maybeLayoutPath);
       if (hasLayout) {
         layoutPath = join(dirname(pagePathBase), "_layout.svelte");
-
         layoutUrl = renderer.getUrl(layoutPath);
       }
 
@@ -496,7 +502,7 @@ async function static({ dev } = {}) {
         throw new Error("Export error");
       }
 
-      await mkdirp(join(".", exportDirName, dir));
+      mkdirp(join(".", exportDirName, dir));
       writeFileSync(join(".", exportDirName, dir, baseName + ".html"), page);
     })
   );
@@ -683,9 +689,34 @@ function getGlobalFiles() {
   return { css, js };
 }
 
+function init() {
+  mkdirp(ap("static"));
+
+  if (!existsSync(ap("global"))) {
+    mkdirp(ap("global"));
+    writeFileSync(
+      ap("global/global.css"),
+      `body {
+  font-family: system-ui, sans;
+}`
+    );
+  }
+
+  if (!existsSync(ap("routes"))) {
+    mkdirp(ap("routes"));
+    writeFileSync(ap("routes/index.svelte"), indexTemplate);
+  }
+
+  if (!existsSync(ap("index.html"))) {
+    writeFileSync(ap("index.html"), defaultHtmlLayout);
+  }
+}
+
 async function main() {
   if (!command || command === "dev") {
     devServer();
+  } else if (command === "init") {
+    init();
   } else if (command === "export") {
     try {
       await static({ dev });

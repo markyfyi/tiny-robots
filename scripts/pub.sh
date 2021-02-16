@@ -1,8 +1,7 @@
 #! /bin/bash
 
 yarn --cwd ./tiny-robots publish --patch
-yarn --cwd ./example add tiny-robots
-yarn --cwd ./example link tiny-robots
+. readdlink.sh
 git add -A
-git commit -m "x"
+git commit -m "."
 git push
