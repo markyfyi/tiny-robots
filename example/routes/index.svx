@@ -4,7 +4,7 @@ Tiny Robots aims to:
 - Get out of your way.
 - Do the grunt work and write the boring code for you.
 - Be predictable, and easy to debug when it's not.
-- Empower code authors with a near-instant feedback loop for development.
+- Empower code authors with a near-instant feedback loop during development.
 - Generate extremely fast, performant bundles.
 - Invest in [ES modules](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/) and the future of web technologies.
 - Embrace [Svelte's philosphy](https://svelte.dev/blog/write-less-code) whilst adding as little runtime overhead as possible.
