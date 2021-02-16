@@ -1,6 +1,6 @@
 Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/) designed to help you build and ship ambitious web apps expeditiously.
 
-Tiny robots aims to:
+Tiny Robots aims to:
 - Get out of your way.
 - Do the grunt work and write the boring code for you.
 - Be predictable, and easy to debug when it's not.
