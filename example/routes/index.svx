@@ -2,7 +2,7 @@ Tiny Robots is a frontend build system and microframework for [Svelte](https://s
 
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
-### 🌈 Features
+### Features 🌈 
 
 - 🔥 Ultrafast hot module replacement. Tiny Robots runs on [Snowpack](https://www.snowpack.dev/) in development, so hot updates stay fast no matter how large your app gets.
 - Hightly configurable universal data fetching. Routes can be eager or deferred.
@@ -12,10 +12,10 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 - Global CSS/JS support. Just create a `global` directory and it's contents will by inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
-### 📦 1. Setup
+### 1. Setup 📦
 
 ```shell
-# --- base ---
+# --- simple setup ---
 yarn add tiny-robots # or npm install tiny-robots
 mkdir routes && touch routes/index.svelte # your first route
 
@@ -27,7 +27,7 @@ touch index.html # optional - an HTML shell
 mkdir global # optional - global css/js files go here; they'll automatically be inlined
 ```
 
-### 👩🏽‍💻 2. Develop
+### 2. Develop 👩🏽‍💻
 
 ```shell
 yarn run tr
@@ -35,7 +35,7 @@ yarn run tr
 
 Runs your app with [Snowpack](https://www.snowpack.dev/).
 
-### 🚀 3. Ship
+### 3. Ship 🚀
 
 ```shell
 yarn run tr export
@@ -45,19 +45,18 @@ Generates an `./export` directory containing production-ready static HTML pages 
 
 Adding `--dev` will produce a build for diagnostics. Presently, it generates an unminified bundle, but more features may be added under this flag in the future.
 
-### 🛠 WIP
+### WIP 🏗
 
 #### Pending
 
 - Error pages.
-- Error recovery in dev.
-- Plain 'ol js pages.
-  - With jsdom support for prerendering.
-- Remove console warnings.
+  - Error recovery in dev.
+- Plain 'ol js routes.
+- TypeScript support.
+- Remove console noise.
 
 #### Coming soon
 
-- TypeScript.
 - More HTML features.
   - Partials.
   - Merge head/body with template/layouts.
@@ -73,7 +72,7 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
   - Social cards.
   - Sitemaps.
 - Route asset preloads on page transition.
-  - Look at hrefs to other pages.
+  - Scans for hrefs to other pages and preloads them.
 - PWA/service worker.
 - Per-component rehydration opt-out (i.e. server-only components).
 - SSR mode.

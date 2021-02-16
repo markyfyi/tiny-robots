@@ -52,7 +52,7 @@ const defaultHtmlLayout = `<!DOCTYPE html>
     <title>app built by tiny robots</title>
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1"
+      content="width=device-width,initial-scale=1"
     />
   </head>
   <body></body>
@@ -165,7 +165,9 @@ ${code}
 start({ pageProps: ${stringifiedProps}, hydrate: true });
 </script>`;
     } else if (src) {
-      script += `<script type="module">
+      script += `
+<link rel="modulepreload" href="${src}">
+<script type="module">
 import { start } from '${src}';
 start({ pageProps: ${stringifiedProps}, hydrate: true });
 </script>`;
@@ -231,8 +233,8 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
 
     const page = baseHtml
       .replace(
-        `<head>`,
-        [cssCode, script, headCode, devHotGlobalCss].join("\n") + "<head>"
+        `</head>`,
+        [cssCode, script, headCode, devHotGlobalCss].join("\n") + "</head>"
       )
       .replace(`<body>`, `<body>\n` + rootHtml);
 
