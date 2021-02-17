@@ -2,6 +2,26 @@
   <h1>
     <a href="/">Tiny Robots</a>
   </h1>
+  <center>
+    <a href="https://github.com/mkshio/tiny-robots/tree/master/tiny-robots">
+      <img
+        class="icon"
+        src="/static/github.svg"
+        alt="An octocat"
+        height="24px"
+        width="24px"
+      />
+    </a>
+    <a href="https://www.npmjs.com/package/tiny-robots">
+      <img
+        class="icon"
+        src="/static/npm.svg"
+        alt="npm's logo"
+        height="24px"
+        width="24px"
+      />
+    </a>
+  </center>
 
   <slot />
 
@@ -49,5 +69,9 @@
     margin-right: 12px;
     margin-bottom: 12px;
     list-style-type: none;
+  }
+
+  .icon {
+    padding: 0px 12px;
   }
 </style>
