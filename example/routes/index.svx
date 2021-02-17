@@ -1,4 +1,4 @@
-Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/) designed help you ship ambitious web apps quickly.
+Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you ship ambitious web apps quickly.
 
 Tiny Robots aims to:
 
@@ -16,7 +16,7 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 
 ### Features 🌈
 
-- Minimal surface area.
+- A minimal surface area - less code you have to remember.
 - 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot-swapping completes in the order of milliseconds and stays that way no matter how large your app gets.
 - Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
 - Static site generation with dynamic data loading. Just run `yarn run tr export`.

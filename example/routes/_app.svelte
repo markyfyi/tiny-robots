@@ -1,26 +1,23 @@
+<script>
+  import Github from "../components/icons/Github.svelte";
+  import NPM from "../components/icons/NPM.svelte";
+</script>
+
 <main>
   <h1>
     <a href="/">Tiny Robots</a>
   </h1>
   <center>
-    <a href="https://github.com/mkshio/tiny-robots/tree/master/tiny-robots">
-      <img
-        class="icon"
-        src="/static/github.svg"
-        alt="An octocat"
-        height="24px"
-        width="24px"
-      />
-    </a>
-    <a href="https://www.npmjs.com/package/tiny-robots">
-      <img
-        class="icon"
-        src="/static/npm.svg"
-        alt="npm's logo"
-        height="24px"
-        width="24px"
-      />
-    </a>
+    <div class="icon">
+      <a href="https://github.com/mkshio/tiny-robots/tree/master/tiny-robots">
+        <Github />
+      </a>
+    </div>
+    <div class="icon">
+      <a href="https://www.npmjs.com/package/tiny-robots">
+        <NPM />
+      </a>
+    </div>
   </center>
 
   <slot />
@@ -46,16 +43,17 @@
   h1 a {
     color: unset;
     text-decoration: none;
+    font-weight: 800;
   }
 
   main {
-    max-width: 640px;
+    max-width: var(--page-width);
+    padding: var(--space-regular);
     margin: 0 auto;
-    padding: 12px;
   }
 
   nav {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-regular);
   }
 
   ul {
@@ -66,12 +64,16 @@
   }
 
   li {
-    margin-right: 12px;
-    margin-bottom: 12px;
+    margin-right: var(--space-regular);
+    margin-bottom: var(--space-regular);
     list-style-type: none;
   }
 
   .icon {
-    padding: 0px 12px;
+    fill: var(--text-color-primary);
+    padding: 0px var(--space-regular);
+    height: var(--icon-size);
+    width: var(--icon-size);
+    display: inline-block;
   }
 </style>

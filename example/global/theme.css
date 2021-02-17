@@ -1,0 +1,23 @@
+:root {
+  --background-color: #c3d5d8;
+  --foreground-color: #a9bfc1;
+  --highlight-color: #e3eaf2;
+
+  --element-color: #92a5a8;
+
+  --text-color-primary: #022125;
+  --text-color-action: #08545e;
+
+  --page-width: 640px;
+
+  --space-smaller: 4px;
+  --space-small: 6px;
+  --space-regular: 12px;
+  --space-large: 24px;
+  --space-larger: 36px;
+  --space-jumbo: 48px;
+
+  --border-radius: 4px;
+
+  --icon-size: 24px;
+}
