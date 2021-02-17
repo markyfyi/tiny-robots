@@ -1,21 +1,8 @@
-Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you ship ambitious web apps quickly.
-
-Tiny Robots aims to:
-
-- Get out of your way.
-- Do the grunt work and write the boring code for you.
-- Be predictable, and easy to debug when it's not.
-- Empower code authors with a near-instant feedback loop during development.
-- Generate extremely fast, performant bundles.
-- Invest in [ES modules](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/) and the future of web technologies.
-- Embrace [Svelte's philosophy](https://svelte.dev/blog/write-less-code) whilst adding as little runtime overhead as possible.
-
-_Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
-
-> **Author's note:** 🏗️ This project is a week old. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
+Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you get things done and ship ambitious web apps quickly.
 
 ### Features 🌈
 
+- Fast dev mode, fast build step, fast runtime.
 - A minimal surface area - less code you have to remember.
 - 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot-swapping completes in the order of milliseconds and stays that way no matter how large your app gets.
 - Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
@@ -28,6 +15,25 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 ¹What's hot module replacement? Here's the definition [straight from Snowpack](https://www.snowpack.dev/concepts/hot-module-replacement):
 
 > _Hot Module Replacement (HMR) is the ability to push file updates to the browser without triggering a full page refresh. Imagine changing some CSS [or JavaScript, or a Svelte file], hitting save, and then instantly seeing your change reflected on the page without a refresh. That’s HMR._
+
+
+### Project goals 🤖
+
+Tiny Robots embraces [Svelte's philosophy](https://svelte.dev/blog/write-less-code), and attempts to explore what applying those principles up the stack could look like.  It borrows a lot of ideas from [Next.js](https://nextjs.org/) and [Sapper](https://sapper.svelte.dev/), but tries to keep a minimal footprint.
+
+Tiny Robots aims to:
+
+- Get out of your way.
+- Empower code authors with an instantaneous feedback loop.
+- Do the grunt work and write the boring code for you.
+- Be predictable, and easy to debug when it's not.
+- Generate extremely fast, performant bundles.
+- Invest in [ES modules](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/) and the future of web technologies.
+
+_Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
+
+> **Author's note:** 🏗️ This project is a week old. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
+
 
 ---
 
