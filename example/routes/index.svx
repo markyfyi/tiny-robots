@@ -26,11 +26,11 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 ### 1. Setup 📦
 
 ```shell
-# --- simple setup ---
+# a simple setup 
 yarn add tiny-robots # or npm install tiny-robots
 mkdir routes && touch routes/index.svelte # your first route
 
-# --- create special directories ---
+# create special directories
 yarn run tr init
 # --- or ---
 mkdir static # optional - static assets (images, fonts) go here
