@@ -26,3 +26,19 @@ hr {
   border: none;
   border-bottom: 1px #92a5a8 solid;
 }
+
+code:not([class*="language-"]) {
+  background: #e3eaf2;
+  padding: 3px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.85em;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+}
+
+blockquote {
+  padding: 4px 24px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: #a9bfc1;
+}

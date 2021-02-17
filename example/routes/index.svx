@@ -1,32 +1,40 @@
 Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/) designed to help you build and ship ambitious web apps expeditiously.
 
 Tiny Robots aims to:
+
 - Get out of your way.
 - Do the grunt work and write the boring code for you.
 - Be predictable, and easy to debug when it's not.
 - Empower code authors with a near-instant feedback loop during development.
 - Generate extremely fast, performant bundles.
 - Invest in [ES modules](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/) and the future of web technologies.
-- Embrace [Svelte's philosphy](https://svelte.dev/blog/write-less-code) whilst adding as little runtime overhead as possible.
+- Embrace [Svelte's philosophy](https://svelte.dev/blog/write-less-code) whilst adding as little runtime overhead as possible.
 
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
-### Features 🌈 
+> **Author's note:** 🏗️ This project is a week old. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
 
-- 🔥 Ultrafast hot module replacement. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot updates stay fast no matter how large your app gets.
-- Hightly configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
+### Features 🌈
+
+- Minimal surface area.
+- 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot-swapping completes in the order of milliseconds and stays that way no matter how large your app gets.
+- Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
 - Static site generation with dynamic data loading. Just run `yarn run tr export`.
-- Client side routing.
+- Client side routing with automatic data fetching.
 - Filesystem-based routing, with directory-based layouts and global app layout.
 - Global CSS/JS support for stuff like vendor code or analytics. Just create a `global` directory and all of it's contents will get inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
+
+¹What's hot module replacement?  Here's the definition [straight from Snowpack](https://www.snowpack.dev/concepts/hot-module-replacement):
+
+> _Hot Module Replacement (HMR) is the ability to push file updates to the browser without triggering a full page refresh. Imagine changing some CSS [or JavaScript, or a Svelte file], hitting save, and then instantly seeing your change reflected on the page without a refresh. That’s HMR._
 
 ---
 
 ### 1. Setup 📦
 
 ```shell
-# a simple setup 
+# a simple setup
 yarn add tiny-robots # or npm install tiny-robots
 mkdir routes && touch routes/index.svelte # your first route
 
@@ -35,7 +43,7 @@ yarn run tr init
 # --- or ---
 mkdir static # optional - static assets (images, fonts) go here
 touch index.html # optional - an HTML shell
-mkdir global # optional - global css/js files go here; they'll automatically be inlined
+mkdir global # optional - global css/j"s files go here; they'll automatically be inlined
 ```
 
 ### 2. Develop 👩🏽‍💻
@@ -54,7 +62,84 @@ yarn run tr export
 
 Generates an `./export` directory containing production-ready static HTML pages and JS bundles using [Rollup](https://rollupjs.org/guide/en/).
 
-Adding `--dev` will produce a build for diagnostics. Presently, it generates an unminified bundle, but more features may be added under this flag in the future.
+Adding `--dev` will produce a build for diagnostics. Presently, it generates an un-minified bundle, but more features may be added under this flag in the future.
+
+---
+
+### Surface area
+
+#### Routes
+
+Tiny Robots rocks PHP-style filesystem-based routing. Just create a file in the `routes` directory and navigate to it in your browser, and Tiny Robots will render the file for you.
+
+Some examples of URL-to-file resolution:
+
+- `/` → `/routes/index.svelte`
+- `/page` → `/routes/page.svelte`
+- `/subpath/` → `/routes/subpath/index.svelte`
+- `/subpath/page` → `/routes/subpath/page.svelte`
+
+#### Layouts with `_layout.svelte`
+
+You may optionally create a `_layout.svelte` to act as a wrapper component around every file in that directory.
+
+For example, if you create a file at the path `/routes/mypath/myfile.svelte`, Tiny Robots will search for a file `/routes/mypath/_layout.svelte` to act as a layout for that page.
+
+Layouts must render a default `<slot />` (a [Svelte concept](https://svelte.dev/tutorial/slots)) as a render target for the current page.
+
+#### App layout with `_app.svelte`
+
+You may additionally create a file in the root of your `routes` directory named `_app.svelte`, which will in turn wrap every page (including that pages layout).
+
+Like their layout cousins, app layouts must also render a default `<slot />`.
+
+#### Data fetching with `prefetch`
+
+```html
+<script context="module">
+  export async function prefetch({
+    params, // object, client-side only - the query parameters from the current url
+    static, // boolean - whether this function is being called in export phase
+  }) {
+    // fetch from your API and
+    // return a promise of the component's props
+    return Promise.resolve({ someProp: 1, someOtherProp: 2 });
+  }
+</script>
+
+<script>
+  export let someProp;
+  export let someOtherProp;
+</script>
+```
+
+By default, both server-side builds and client navigation will wait to render until the prefetch promise resolves.
+
+Components can optionally export a module-level flag to mark itself as "eager" (`export let eager = true;`). When navigating to an eager component on the client, the router will immediately render the page without any prefetched props, then update it once the prefetch resolves.
+
+Tiny Robots also injects props named `loading` and `fetching` into every component (including `_layout` and `_app`) to allow the UI to display interstitial states. `loading` indicates that the app is int he middle of a route transition, and `fetching` indicates the app is waiting route in question's `prefetch` call. Note, `loading` and `fetching` can be simultaneously true.
+
+#### Static assets
+
+If you depend on any images, fonts, stylesheets or other files stash them in a directory in your project's root called `static`. Tiny Robots will copy the contents of `static` into it's generated export directory.
+
+#### Global assets
+
+Sometimes we inherit code that, for one reason or another, can't or shouldn't be bundled:
+
+- Non-modularized assets
+- Vendor libraries
+- Analytics
+- Polyfills
+- CSS resets or global themes
+- jQuery or Wordpress plugins (hey, no judgement here)
+- Code hastily copy/pasted from Stack Overflow 😅
+
+Tiny Robots will detect the presence of a `global` directory in your project root, and automatically inline all of the code from each file in said directory into every HTML page created during export.
+
+Presently, it only supports plain JavaScript and CSS.
+
+Note: unlike static assets, global assets aren't available in the `export` directory.
 
 ---
 
@@ -64,7 +149,9 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
 
 - Error pages.
   - Error recovery in dev.
-- Plain 'ol js routes.
+- Dynamic routes.
+  - "Get static routes" capability.
+- Plain 'ol JS routes.
 - TypeScript support.
 - Remove console noise.
 
@@ -75,7 +162,6 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
   - Merge head/body with template/layouts.
 - Image preloads.
   - Add images to manifest.
-- "Get static routes" capability.
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
   - Slugs, catchall routes and URL rewrites.
@@ -85,12 +171,12 @@ Adding `--dev` will produce a build for diagnostics. Presently, it generates an 
   - Social cards.
   - Sitemaps.
 - Route asset preloads on page transition.
-  - Scans for hrefs to other pages and preloads them.
+  - Scan for hrefs to other pages and preload them.
 - PWA/service worker.
 - Per-component rehydration opt-out (i.e. server-only components).
 - SSR mode.
   - Vercel runtime integration.
   - Server hooks.
 - Better CSS extraction.
-- Support for React pages.
-- esbuild for production.
+- Experiment: Support for React pages.
+- Experiment: esbuild for production.

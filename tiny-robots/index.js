@@ -147,7 +147,7 @@ class Renderer {
 
     let prefetchedProps = {};
     if (prefetch) {
-      prefetchedProps = await prefetch({ static: true });
+      prefetchedProps = await prefetch({ static: true, params: {} });
     }
     const stringifiedProps = JSON.stringify(prefetchedProps ?? {});
 
