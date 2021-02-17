@@ -1,7 +1,7 @@
 * {
   margin: 0;
   padding: 0;
-  font-size: 1.035em;
+  font-size: 1.05rem;
   line-height: 1.6;
 }
 
@@ -38,4 +38,8 @@ code {
 ul,
 ol {
   padding-left: 1.2em;
+}
+
+li > * {
+  margin: 0;
 }

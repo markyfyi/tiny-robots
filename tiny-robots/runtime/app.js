@@ -65,6 +65,14 @@ export function start({ root, dev }) {
     // TODO: check if click came from an A tag somehow
     if (!e.target.href) return;
     const url = new URL(e.target.href);
+
+    if (
+      url.origin === document.location.origin &&
+      url.pathname === document.location.pathname
+    ) {
+      return;
+    }
+
     if (url.origin === document.location.origin) {
       const nagvigated = navigate(url, true);
       if (nagvigated) {
