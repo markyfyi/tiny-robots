@@ -560,7 +560,7 @@ async function static({ dev } = {}) {
 
       if (viewSource) {
         const entryCode = virtualEntries[filePath];
-        const source = {
+        const sources = {
           ext,
           main: readFileSync(apr(filePath), "utf-8"),
           entry: entryCode,
@@ -568,8 +568,15 @@ async function static({ dev } = {}) {
 
         mkdirp(join(".", exportDirName, "view-source", "entries", dir));
         writeFileSync(
-          join(".", exportDirName, "view-source", "entries", dir, baseName),
-          JSON.stringify(source)
+          join(
+            ".",
+            exportDirName,
+            "view-source",
+            "entries",
+            dir,
+            baseName + ".json"
+          ),
+          JSON.stringify(sources)
         );
       }
     })
