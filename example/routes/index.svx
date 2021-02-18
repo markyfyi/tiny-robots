@@ -151,20 +151,24 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- Differentiate and persist build-time data fetching in SPA mode.
-- SEO defaults with svelte-seo.
+- Differentiate runtime and build-time data fetching.
+  - Option to persist build-time data for SPA.
+- SEO defaults.
+  - Use svelte-seo.
   - Meta tags.
   - Social cards.
   - Sitemaps.
-- Better CSS extraction.
-- Dynamic routes.
+- Better CSS transformation and extraction with postcss.
+- Dynamic routes e.g. `/dir/[slug]`.
   - "Get static routes" capability.
-- Plain 'ol JS routes.
+- Error pages.
+  - Error boundaries.
+  - SPA error handling.
+  - Error recovery in dev.
 
 #### Coming soon
 
-- Error pages.
-  - Error recovery in dev.
+- Plain 'ol JS routes.
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
