@@ -126,7 +126,7 @@ class Renderer {
 
     this.server = await startServer({
       config,
-      lockfile: undefined,
+      lockfile: null,
     });
 
     this.runtime = this.server.getServerRuntime();
@@ -134,6 +134,15 @@ class Renderer {
 
   getUrl(path) {
     return this.server.getUrlForFile(apr(path));
+  }
+
+  async prefetchPath(path) {
+    const pageUrl = this.server.getUrlForFile(apr(path));
+    const { prefetch } = (await this.runtime.importModule(pageUrl)).exports;
+
+    if (prefetch) {
+      return prefetch({ static: true, params: {} });
+    }
   }
 
   async renderPage(
@@ -145,7 +154,7 @@ class Renderer {
       await this.runtime.importModule(pageUrl)
     ).exports;
 
-    let prefetchedProps = {};
+    let prefetchedProps;
     if (prefetch) {
       prefetchedProps = await prefetch({ static: true, params: {} });
     }
@@ -201,6 +210,7 @@ start({ pageProps: ${stringifiedProps}, hydrate: true });
       pageComponent,
       appLayoutComponent,
       layoutComponent,
+      fetching: true,
       pageProps: { ...prefetchedProps },
     });
 
@@ -239,18 +249,48 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
       .replace(`<body>`, `<body>\n` + rootHtml);
 
     if (dev) {
-      return page;
+      return { page, prefetchedProps };
     }
 
     const minifiedPage = htmlMinifier.minify(page, htmlMinifyOptions);
 
-    return minifiedPage;
+    return { page: minifiedPage, prefetchedProps };
   }
 
   async stop() {
     this.proxy.close();
     await this.server.shutdown();
   }
+}
+
+function resolveAppPaths(path) {
+  const fsFilePath = apr(path);
+  const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
+  let pagePathBase = path;
+  let pageDirPath = dirname(fsFilePath);
+  if (!path || path === "/") {
+    pagePathBase = "/index";
+    pageDirPath = fsFilePath;
+  } else if (isDir) {
+    pagePathBase = join(path, "index");
+    pageDirPath = fsFilePath;
+  } else if (last(path) === "/") {
+    pagePathBase = path.slice(0, -1);
+  }
+
+  const files = readdirSync(pageDirPath);
+  const base = basename(pagePathBase);
+  const fileName = files.find((f) => f.startsWith(base));
+  const ext = fileName ? extname(fileName) : null;
+  const pagePath = fileName ? `${pagePathBase}${ext}` : null;
+
+  return {
+    pagePathBase,
+    pageDirPath,
+    fileName,
+    pagePath,
+    ext,
+  };
 }
 
 async function devServer() {
@@ -294,25 +334,25 @@ async function devServer() {
       return;
     }
 
-    try {
-      const fsFilePath = apr(path);
-      const isDir =
-        existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
-      let pagePathBase = path;
-      let pageDirPath = dirname(fsFilePath);
-      if (!path || path === "/") {
-        pagePathBase = "/index";
-        pageDirPath = fsFilePath;
-      } else if (isDir) {
-        pagePathBase = join(path, "index");
-        pageDirPath = fsFilePath;
-      } else if (last(path) === "/") {
-        pagePathBase = path.slice(0, -1);
-      }
+    if (path.startsWith("/_dev_prefetch")) {
+      const pagepath = path.replace("/_dev_prefetch", "");
+      const { pagePath } = resolveAppPaths(pagepath);
+      res.setHeader("Content-Type", "application/json");
+      res.statusCode = 200;
+      const data = await renderer.prefetchPath(pagePath);
+      res.end(JSON.stringify(data));
+      return;
+    }
 
-      const files = readdirSync(pageDirPath);
-      const base = basename(pagePathBase);
-      const fileName = files.find((f) => f.startsWith(base));
+    if (["_app", "_layout"].includes(lastSegment)) {
+      error404();
+      return;
+    }
+
+    try {
+      const { pagePathBase, pageDirPath, pagePath, fileName } = resolveAppPaths(
+        path
+      );
 
       if (!fileName) {
         const htmlPath = apr(pagePathBase + ".html");
@@ -327,8 +367,6 @@ async function devServer() {
         return;
       }
 
-      const ext = extname(fileName);
-      const pagePath = `${pagePathBase}${ext}`;
       const pageUrl = renderer.getUrl(pagePath);
       const maybeLayoutPath = join(pageDirPath, "_layout.svelte");
 
@@ -350,7 +388,7 @@ async function devServer() {
         true
       );
 
-      const page = await renderer.renderPage(pagePath, {
+      const { page } = await renderer.renderPage(pagePath, {
         appLayoutPath,
         layoutPath,
         code,
@@ -400,13 +438,14 @@ const start = ({ pageProps, hydrate }) => {
     hydrate,
     props: {
       ...routeProps(),
+      fetching: true,
       pageProps
     }
   });
 
   ${
     isSPA
-      ? `import("${appUrl}").then(m => m.start({ root, dev: ${!!isDev} }));`
+      ? `import("${appUrl}").then(m => m.start({ root, dev: ${!!isDev}, page, pageProps }));`
       : ""
   }
 }
@@ -439,6 +478,8 @@ async function static({ dev } = {}) {
   );
 
   mkdirp(ap(exportDirName));
+  mkdirp(ap(exportDirName, "assets"));
+  mkdirp(ap(exportDirName, "assets", "_data"));
   const bundle = await build.write({
     hoistTransitiveImports: false,
     compact: true,
@@ -464,34 +505,28 @@ async function static({ dev } = {}) {
 
   const manifest = {};
 
-  pages.map(({ path, filePath }) => {
-    const output = indexedOutput.get(fileNamesToEntries[filePath]);
-    const outputFilePath = join("/", assetsDirName, output.fileName);
-    const preloadJs = (output?.imports ?? []).map((m) =>
-      join("/", assetsDirName, m)
-    );
-
-    manifest[path] = {
-      js: outputFilePath,
-      path,
-      preloadJs,
-    };
-  });
-
   await Promise.all(
     pages.map(async function ({ path, name, dir, hasLayout, filePath }) {
       const baseName = parse(name).name;
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
       const outputFilePath = join("/", assetsDirName, output.fileName);
+      const dataPath = join(
+        ".",
+        assetsDirName,
+        "_data",
+        parse(output.fileName).name + ".json"
+      );
+      // const dataFilePath = join("/", assetsDirName, "_data", output.fileName);
 
       const preloadJs = (output?.imports ?? []).map((m) =>
         join("/", assetsDirName, m)
       );
 
       let page;
+      let prefetchedProps;
       try {
-        page = await renderer.renderPage(filePath, {
+        p = await renderer.renderPage(filePath, {
           layoutPath,
           appLayoutPath: hasAppLayout ? "_app.svelte" : null,
           src: outputFilePath,
@@ -499,19 +534,36 @@ async function static({ dev } = {}) {
           code: undefined,
           dev,
         });
+        page = p.page;
+        prefetchedProps = p.prefetchedProps;
       } catch (error) {
         console.error(`Export failed on page '${page}' with error:`, error);
         throw new Error("Export error");
       }
 
       mkdirp(join(".", exportDirName, dir));
+      if (prefetchedProps) {
+        writeFileSync(
+          join(".", exportDirName, dataPath),
+          JSON.stringify(prefetchedProps, null, dev ? "\t" : undefined)
+        );
+      }
       writeFileSync(join(".", exportDirName, dir, baseName + ".html"), page);
+
+      // manifest
+
+      manifest[path] = {
+        js: outputFilePath,
+        path,
+        preloadJs,
+        data: prefetchedProps ? join("/", dataPath) : undefined,
+      };
     })
   );
 
   writeFileSync(
     ap(exportDirName, assetsDirName, "manifest.json"),
-    JSON.stringify({ paths: manifest })
+    JSON.stringify({ paths: manifest }, null, dev ? "\t" : undefined)
   );
 
   await build.close();

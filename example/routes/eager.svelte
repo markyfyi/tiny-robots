@@ -1,14 +1,22 @@
 <script context="module">
   export const eager = true;
+
   export async function prefetch() {
     return new Promise((n) =>
-      setTimeout(() => n({ wasPrefetched: true }), 300)
+      setTimeout(() => n({ wasStaticPrefetched: true }), 300)
+    );
+  }
+
+  export async function clientFetch() {
+    return new Promise((n) =>
+      setTimeout(() => n({ wasClientPrefetched: true }), 1000)
     );
   }
 </script>
 
 <script>
-  export let wasPrefetched;
+  export let wasStaticPrefetched;
+  export let wasClientPrefetched;
   export let fetching = false;
 </script>
 
@@ -17,11 +25,13 @@
 <p>This page won't block when navigated to on the client.</p>
 
 <p>
-  <em>
-    {#if fetching}
-      (fetching...)
-    {:else}
-      wasPrefetched: {wasPrefetched}
-    {/if}
-  </em>
+  Was statically prefetched: {wasStaticPrefetched}
+</p>
+
+<p>
+  Was client prefetched: {#if fetching}
+    (fetching...)
+  {:else}
+    {wasClientPrefetched}
+  {/if}
 </p>

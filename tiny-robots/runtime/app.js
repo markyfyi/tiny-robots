@@ -3,9 +3,10 @@
 const manifestUrl = "/assets/manifest.json";
 const devManifestUrl = "/assets/manifest";
 
-let lastPendingId;
 let pendingIdCtr = 0;
+let lastPendingId = pendingIdCtr;
 
+/** @type {{ paths: {[name: string]: { js: string, data: any }} }} */
 let cachedManifest;
 async function manifest() {
   if (cachedManifest) return cachedManifest;
@@ -17,7 +18,36 @@ async function devManifest() {
   return await (await fetch(devManifestUrl)).json();
 }
 
-export function start({ root, dev }) {
+async function bootstrap({ dev, root, page, pageProps, id }) {
+  if (page.clientFetch) {
+    root.$set({
+      fetching: true,
+    });
+
+    try {
+      const params = parseParams(new URL(document.location).search);
+      const clientProps = await page.clientFetch({ params });
+
+      if (lastPendingId !== id) {
+        return;
+      }
+
+      root.$set({
+        fetching: false,
+        pageProps: { ...pageProps, ...clientProps },
+      });
+    } catch (error) {
+      console.error(error);
+      root.$set({
+        fetching: false,
+        clientFetchError: true,
+        pageProps: { ...pageProps },
+      });
+    }
+  }
+}
+
+export function start({ root, dev, page, pageProps }) {
   async function navigate(url, push) {
     const pathname =
       (url.pathname[url.pathname.length - 1] === "/"
@@ -42,7 +72,11 @@ export function start({ root, dev }) {
       }
 
       if (entry) {
-        const m = await import(entry.js);
+        const [m, data] = await Promise.all([
+          import(entry.js),
+          entry.data ? fetch(entry.data).then((r) => r.json()) : null,
+        ]);
+
         if (lastPendingId !== id) {
           return;
         }
@@ -51,7 +85,7 @@ export function start({ root, dev }) {
 
         const props = routeProps();
 
-        await update(root, pageModule, props, id, params);
+        await update(root, pageModule, props, id, params, data);
         return true;
       }
     }
@@ -84,20 +118,30 @@ export function start({ root, dev }) {
   if (!dev) {
     manifest();
   }
+
+  bootstrap({ root, dev, page, pageProps, id: pendingIdCtr });
 }
 
-async function update(root, { eager, prefetch }, componentProps, id, params) {
+async function update(
+  root,
+  { eager, clientFetch },
+  componentProps,
+  id,
+  params,
+  data
+) {
   if (eager) {
     root.$set({
       ...(eager ? componentProps : {}),
       fetching: true,
+      pageProps: { ...data },
     });
   }
 
-  let prefetchedProps = {};
+  let clientProps = {};
 
-  if (prefetch) {
-    prefetchedProps = await prefetch({ params });
+  if (clientFetch) {
+    clientProps = await clientFetch({ params });
   }
 
   if (lastPendingId !== id) {
@@ -107,10 +151,9 @@ async function update(root, { eager, prefetch }, componentProps, id, params) {
   const props = {
     ...(eager ? {} : componentProps),
     fetching: false,
-    pageProps: prefetchedProps,
+    pageProps: { ...data, ...clientProps },
   };
 
-  // if (push) history.replaceState({ prefetchedProps }, undefined, pathname);
   root.$set(props);
 }
 
@@ -122,16 +165,17 @@ async function __dev__navigate({ root, pathname, id, params }) {
   }
 
   if (entry) {
-    const pageModule = await import(entry.js);
+    const [pageModule, layoutModule, appLayoutModule] = await Promise.all([
+      import(entry.js),
+      entry.__dev__layoutJs ? import(entry.__dev__layoutJs) : null,
+      manifest.__dev__appLayoutUrl
+        ? import(manifest.__dev__appLayoutUrl)
+        : null,
+    ]);
 
-    let layoutModule;
-    if (entry.__dev__layoutJs) {
-      layoutModule = await import(entry.__dev__layoutJs);
-    }
-
-    let appLayoutModule;
-    if (manifest.__dev__appLayoutUrl) {
-      appLayoutModule = await import(manifest.__dev__appLayoutUrl);
+    let prefetchedProps;
+    if (pageModule.prefetch) {
+      prefetchedProps = await (await fetch("/_dev_prefetch" + pathname)).json();
     }
 
     if (lastPendingId !== id) {
@@ -144,7 +188,7 @@ async function __dev__navigate({ root, pathname, id, params }) {
       appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
     };
 
-    await update(root, pageModule, componentProps, id, params);
+    await update(root, pageModule, componentProps, id, params, prefetchedProps);
   }
 }
 

@@ -151,8 +151,7 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- Differentiate runtime and build-time data fetching.
-  - Option to persist build-time data for SPA.
+- Document data-fetching.
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.
@@ -169,6 +168,12 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 #### Coming soon
 
 - Plain 'ol JS routes.
+- Metapages: pages that operate on other page data (i.e. index pages, RSS feeds).
+- Fun: add `export const viewSource = true;` to get a prop containing the stringified source.
+  - Can move source into a lazy-loaded file.
+  - Can point to GH.
+  - Optionally include syntax highlighting/AST?
+  - Will have to include depencency tree.
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
