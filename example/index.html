@@ -17,6 +17,20 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>"
     />
+    <script>
+      window.plausible =
+        window.plausible ||
+        function () {
+          (window.plausible.q = window.plausible.q || []).push(arguments);
+        };
+
+      addEventListener("load", () => {
+        const s = document.createElement("script");
+        s.setAttribute("data-domain", "tinyrobots.mksh.io");
+        s.src = "https://tinyrobots-p.mksh.io/js/index.js";
+        document.head.appendChild(s);
+      });
+    </script>
   </head>
   <body></body>
 </html>
