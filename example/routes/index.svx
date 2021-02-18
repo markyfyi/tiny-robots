@@ -16,10 +16,9 @@ Tiny Robots is a frontend build system and anti-framework built on top of [Svelt
 
 > _Hot Module Replacement (HMR) is the ability to push file updates to the browser without triggering a full page refresh. Imagine changing some CSS [or JavaScript, or a Svelte file], hitting save, and then instantly seeing your change reflected on the page without a refresh. That’s HMR._
 
-
 ### Project goals 🤖
 
-Tiny Robots embraces [Svelte's philosophy](https://svelte.dev/blog/write-less-code), and attempts to explore what applying those principles up the stack could look like.  It borrows a lot of ideas from [Next.js](https://nextjs.org/) and [Sapper](https://sapper.svelte.dev/), but tries to keep a minimal footprint.
+Tiny Robots embraces [Svelte's philosophy](https://svelte.dev/blog/write-less-code), and attempts to explore what applying those principles up the stack could look like. It borrows a lot of ideas from [Next.js](https://nextjs.org/) and [Sapper](https://sapper.svelte.dev/), but tries to keep a minimal footprint.
 
 Tiny Robots aims to:
 
@@ -33,7 +32,6 @@ Tiny Robots aims to:
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
 > **Author's note:** 🏗️ This project is a week old. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
-
 
 ---
 
@@ -153,37 +151,38 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- Error pages.
-  - Error recovery in dev.
+- Differentiate and persist build-time data fetching in SPA mode.
+- SEO defaults with svelte-seo.
+  - Meta tags.
+  - Social cards.
+  - Sitemaps.
+- Better CSS extraction.
 - Dynamic routes.
   - "Get static routes" capability.
 - Plain 'ol JS routes.
-- TypeScript support.
-- Remove console noise.
 
 #### Coming soon
 
+- Error pages.
+  - Error recovery in dev.
 - npx/yarn `create-*-app` command
-- More HTML features.
-  - Partials.
-  - Merge head/body with template/layouts.
-- Image preloads.
-  - Add images to manifest.
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
   - Slugs, catchall routes and URL rewrites.
   - Abstraction for lambdas.
-- SEO defaults.
-  - Meta tags.
-  - Social cards.
-  - Sitemaps.
+- TypeScript support.
+- Remove console noise.
+- More HTML features.
+  - Partials.
+  - Merge head/body with template/layouts.
 - Route asset preloads on page transition.
-  - Scan for hrefs to other pages and preload them.
+  - Image preloads.
+    - Add images to manifest.
+  - Scan for hrefs to other pages and preload their js/css/pages.
 - PWA/service worker.
 - Per-component rehydration opt-out (i.e. server-only components).
 - SSR mode.
   - Vercel runtime integration.
   - Server hooks.
-- Better CSS extraction.
 - Experiment: Support for React pages.
 - Experiment: esbuild for production.
