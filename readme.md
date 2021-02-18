@@ -1,11 +1,12 @@
-# Tiny Robots, a minimal web framework that gets out of your way
+# Tiny Robots
+
+Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you ship ambitious web apps faster.
+
+Please find [documentation here](https://tinyrobots.mksh.io).
 
 ## Directory
 
+This is a sort-of-monorepo containing two packages:
+
 - `tiny-robots`, the installable library.
-- `example`, a runnable, reployable demo of what Tiny Robots can do.
-
-## Upstream bugs
-
-- Snowpack/Rollup `hydratable` fix: https://github.com/snowpackjs/snowpack/pull/2602. A workaround is hacked in.
-- mdsvex sometimes fails to validate components in dev. This is usually fixed by re-saving the file.
+- `example`, a runnable, deployable app demonstrating what Tiny Robots can do for you.
