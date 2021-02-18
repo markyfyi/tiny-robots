@@ -82,6 +82,7 @@ const htmlMinifyOptions = {
 const appPath = process.cwd();
 const [, , command, ...restArgs] = process.argv;
 const dev = restArgs.includes("--dev");
+const viewSource = restArgs.includes("--view-source");
 
 function ap(...ps) {
   return join(appPath, ...ps);
@@ -97,6 +98,36 @@ function last(xs) {
 
 function read(f) {
   return readFileSync(f, "utf-8");
+}
+
+function resolveAppPaths(path) {
+  const fsFilePath = apr(path);
+  const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
+  let pagePathBase = path;
+  let pageDirPath = dirname(fsFilePath);
+  if (!path || path === "/") {
+    pagePathBase = "/index";
+    pageDirPath = fsFilePath;
+  } else if (isDir) {
+    pagePathBase = join(path, "index");
+    pageDirPath = fsFilePath;
+  } else if (last(path) === "/") {
+    pagePathBase = path.slice(0, -1);
+  }
+
+  const files = readdirSync(pageDirPath);
+  const base = basename(pagePathBase);
+  const fileName = files.find((f) => f.startsWith(base));
+  const ext = fileName ? extname(fileName) : null;
+  const pagePath = fileName ? `${pagePathBase}${ext}` : null;
+
+  return {
+    pagePathBase,
+    pageDirPath,
+    fileName,
+    pagePath,
+    ext,
+  };
 }
 
 class Renderer {
@@ -261,36 +292,6 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
     this.proxy.close();
     await this.server.shutdown();
   }
-}
-
-function resolveAppPaths(path) {
-  const fsFilePath = apr(path);
-  const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
-  let pagePathBase = path;
-  let pageDirPath = dirname(fsFilePath);
-  if (!path || path === "/") {
-    pagePathBase = "/index";
-    pageDirPath = fsFilePath;
-  } else if (isDir) {
-    pagePathBase = join(path, "index");
-    pageDirPath = fsFilePath;
-  } else if (last(path) === "/") {
-    pagePathBase = path.slice(0, -1);
-  }
-
-  const files = readdirSync(pageDirPath);
-  const base = basename(pagePathBase);
-  const fileName = files.find((f) => f.startsWith(base));
-  const ext = fileName ? extname(fileName) : null;
-  const pagePath = fileName ? `${pagePathBase}${ext}` : null;
-
-  return {
-    pagePathBase,
-    pageDirPath,
-    fileName,
-    pagePath,
-    ext,
-  };
 }
 
 async function devServer() {
@@ -507,7 +508,7 @@ async function static({ dev } = {}) {
 
   await Promise.all(
     pages.map(async function ({ path, name, dir, hasLayout, filePath }) {
-      const baseName = parse(name).name;
+      const { name: baseName, ext } = parse(name);
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
       const outputFilePath = join("/", assetsDirName, output.fileName);
@@ -550,14 +551,27 @@ async function static({ dev } = {}) {
       }
       writeFileSync(join(".", exportDirName, dir, baseName + ".html"), page);
 
-      // manifest
-
       manifest[path] = {
         js: outputFilePath,
         path,
         preloadJs,
         data: prefetchedProps ? join("/", dataPath) : undefined,
       };
+
+      if (viewSource) {
+        const entryCode = virtualEntries[filePath];
+        const source = {
+          ext,
+          main: readFileSync(apr(filePath), "utf-8"),
+          entry: entryCode,
+        };
+
+        mkdirp(join(".", exportDirName, "view-source", "entries", dir));
+        writeFileSync(
+          join(".", exportDirName, "view-source", "entries", dir, baseName),
+          JSON.stringify(source)
+        );
+      }
     })
   );
 
