@@ -490,6 +490,7 @@ async function static({ dev } = {}) {
   mkdirp(ap(exportDirName, "assets"));
   mkdirp(ap(exportDirName, "assets", "_data"));
   const bundle = await build.write({
+    sourcemap: true,
     hoistTransitiveImports: false,
     compact: true,
     entryFileNames: "[name].js",
@@ -630,7 +631,8 @@ function pagesToEntries(pages, hasAppLayout) {
 }
 
 function rollupConfig({ fileNames, dev, virtualEntries }) {
-  return {
+  /** @type {import('rollup').RollupOptions} */
+  const options = {
     input: fileNames,
     preserveSymlinks: true,
     plugins: [
@@ -671,6 +673,8 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
       !dev && terser(),
     ],
   };
+
+  return options;
 }
 
 function snowpackConfig({ proxyDest }) {

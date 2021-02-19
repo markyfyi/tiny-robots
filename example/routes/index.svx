@@ -173,47 +173,55 @@ Note: unlike static assets, global assets aren't available in the `export` direc
     - Filename.
     - Modal component.
     - "This page built by Tiny Robots".
-    - Link to Github
-- `prefetch` context.
-- Universal global fetch for `prefetch`.
+    - Link to Github.
+- `prefetch` context - functions available for prefetch.
+  - Universal global fetch.
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.
   - Social cards.
-  - Sitemaps.
+- Better CSS transformation and extraction with postcss.
+- Route asset preloads on page transition.
+  - Scan for hrefs to other pages and preload their js/css/pages.
+  - Image preloads.
+    - Add images to manifest.
 - Error pages.
+  - Error reporting.
   - Error boundaries.
   - SPA error handling.
-- Better CSS transformation and extraction with postcss.
-- Dynamic routes e.g. `/dir/[slug]`.
-  - "Get static routes" capability.
-  - Client-only routes.
+  - Sourcemaps
+    - Generate, upload, (optionally) destroy for prod.
+- Config file.
 
 #### Coming soon
 
+- Dynamic routes e.g. `/dir/[slug]`.
+  - "Get static routes" capability.
+  - Client-only routes.
 - Plain 'ol JS routes.
-- Error recovery in dev.
 - View source syntax highlighting.
 - Metapages: pages that operate on other page data (i.e. index pages, RSS feeds).
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
-  - Slugs, catchall routes and URL rewrites.
+  - Generate manifests for catchall routes and URL rewrites.
   - Abstraction for lambdas.
-- TypeScript support.
-- Remove console noise.
-- More HTML features.
-  - Partials.
-  - Merge head/body with template/layouts.
-- Route asset preloads on page transition.
-  - Image preloads.
-    - Add images to manifest.
-  - Scan for hrefs to other pages and preload their js/css/pages.
+- svelte-preprocess support.
 - PWA/service worker.
-- Per-component rehydration opt-out (i.e. server-only components).
+- Sitemaps.
 - SSR mode.
   - Vercel runtime integration.
   - Server hooks.
-- View source: include dependencies with Rollup?
+
+#### Ideas & fun stuff
+
+- More HTML features.
+  - Partials.
+  - Merge head/body with template/layouts.
+- Work with Svelte/Snowpack teams to reduce console noise.
+- Error recovery in dev.
+- Per-component rehydration opt-out (i.e. server-only components).
+- View source: show compiled Svelte compnents (**before** they're rolled up).
+- View source: show dependencies too?
 - Experiment: Support for React pages.
 - Experiment: esbuild for production.
