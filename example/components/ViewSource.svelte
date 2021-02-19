@@ -31,21 +31,23 @@
 {#if sources[openTo]}
   <div transition:fade="{{ duration: 100 }}" class="open">
     <div class="container">
-      <h3>🤖 source code of <em>/{pageId}</em></h3>
-      <h4>Route</h4>
-      {#if sources[openTo].source}
-        {#if sources[openTo].source.main}
-          <pre>{sources[openTo].source.main}</pre>
+      <div class="content">
+        <h3>🤖 source code of <em>/{pageId}</em></h3>
+        <h4>Route</h4>
+        {#if sources[openTo].source}
+          {#if sources[openTo].source.main}
+            <pre>{sources[openTo].source.main}</pre>
+          {/if}
+          <h4>Generated entry</h4>
+          {#if sources[openTo].source.entry}
+            <pre>{sources[openTo].source.entry}</pre>
+          {/if}
+        {:else if sources[openTo].fetching}
+          <em>Fetching...</em>
+        {:else if sources[openTo].error}
+          <em>Failed to fetch source.</em>
         {/if}
-        <h4>Generated entry</h4>
-        {#if sources[openTo].source.entry}
-          <pre>{sources[openTo].source.entry}</pre>
-        {/if}
-      {:else if sources[openTo].fetching}
-        <em>Fetching...</em>
-      {:else if sources[openTo].error}
-        <em>Failed to fetch source.</em>
-      {/if}
+      </div>
       <button class="close-button" on:click="{() => (openTo = null)}">×</button>
     </div>
   </div>
@@ -69,24 +71,33 @@
     right: 12px;
     margin: 0 auto;
     max-width: 640px;
-    overflow: scroll;
+    overflow: hidden;
   }
 
   .container {
     position: relative;
+  }
+
+  .content {
+    overflow: scroll;
+    height: calc(100vh - 144px);
     padding: 24px;
   }
 
   .close-button {
     position: absolute;
     top: 10px;
-    right: 15px;
+    right: 10px;
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 25px;
-    width: 50px;
-    height: 50px;
+    font-size: 21px;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    border-radius: 50%;
+    background: #ffffff99;
+    backdrop-filter: blur(15px) saturate(2);
   }
 
   .open-button {
