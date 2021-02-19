@@ -27,6 +27,10 @@ code:not([class*="language-"]) {
   padding: 4px;
   border-radius: var(--border-radius);
   font-weight: 600;
+}
+
+pre,
+.code {
   font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
 }
 

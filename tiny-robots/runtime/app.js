@@ -85,7 +85,16 @@ export function start({ root, dev, page, pageProps }) {
 
         const props = routeProps();
 
-        await update(root, pageModule, props, id, params, data);
+        await update(
+          entry.pageId,
+          pathname,
+          root,
+          pageModule,
+          props,
+          id,
+          params,
+          data
+        );
         return true;
       }
     }
@@ -123,6 +132,8 @@ export function start({ root, dev, page, pageProps }) {
 }
 
 async function update(
+  pageId,
+  pathname,
   root,
   { eager, clientFetch },
   componentProps,
@@ -133,6 +144,8 @@ async function update(
   if (eager) {
     root.$set({
       ...(eager ? componentProps : {}),
+      pathname,
+      pageId,
       fetching: true,
       pageProps: { ...data },
     });
@@ -150,6 +163,8 @@ async function update(
 
   const props = {
     ...(eager ? {} : componentProps),
+    pathname,
+    pageId,
     fetching: false,
     pageProps: { ...data, ...clientProps },
   };
@@ -188,7 +203,16 @@ async function __dev__navigate({ root, pathname, id, params }) {
       appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
     };
 
-    await update(root, pageModule, componentProps, id, params, prefetchedProps);
+    await update(
+      entry.pageId,
+      pathname,
+      root,
+      pageModule,
+      componentProps,
+      id,
+      params,
+      prefetchedProps
+    );
   }
 }
 

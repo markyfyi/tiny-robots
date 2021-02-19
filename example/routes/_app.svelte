@@ -1,7 +1,12 @@
 <script>
   import Github from "../components/icons/Github.svelte";
   import NPM from "../components/icons/NPM.svelte";
+  import ViewSource from "../components/ViewSource.svelte";
+
+  export let pageId;
 </script>
+
+<ViewSource pageId="{pageId}" />
 
 <main>
   <h1>
