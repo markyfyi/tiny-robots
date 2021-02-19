@@ -23,17 +23,17 @@
     }
   }
 
-  onMount(() => fetchSource(pageId));
+  onMount(() => pageId && fetchSource(pageId));
 
-  $: isBrowser && fetchSource(pageId);
+  $: isBrowser && pageId && fetchSource(pageId);
 </script>
 
-{#if sources[openTo]}
+{#if openTo}
   <div transition:fade="{{ duration: 100 }}" class="open">
     <div class="container">
       <div class="content">
         <h3>🤖 source code of <em>/{pageId}</em></h3>
-        {#if sources[openTo].source}
+        {#if sources[openTo] && sources[openTo].source}
           <h4>Route</h4>
           {#if sources[openTo].source.main}
             <pre>{sources[openTo].source.main}</pre>
@@ -42,10 +42,12 @@
           {#if sources[openTo].source.entry}
             <pre>{sources[openTo].source.entry}</pre>
           {/if}
-        {:else if sources[openTo].fetching}
+        {:else if sources[openTo] && sources[openTo].fetching}
           <em>Fetching...</em>
-        {:else if sources[openTo].error}
+        {:else if sources[openTo] && sources[openTo].error}
           <em>Failed to fetch source.</em>
+        {:else}
+          <em>Invalid page</em>
         {/if}
       </div>
       <button class="close-button" on:click="{() => (openTo = null)}">×</button>
@@ -61,8 +63,9 @@
 
 <style>
   .open {
+    color: #222;
     position: fixed;
-    background: #ffffff66;
+    background: #ffffff88;
     backdrop-filter: blur(15px) saturate(2);
     -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
@@ -101,7 +104,7 @@
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: #ffffff66;
+    background: #ffffff88;
     backdrop-filter: blur(15px) saturate(2);
     -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
@@ -115,10 +118,11 @@
   }
 
   .open-button:hover {
-    background: #ffffff99;
+    background: #ffffffaa;
   }
 
   pre {
+    text-transform: none;
     background-color: #222;
     border-radius: 4px;
     padding: 24px;
