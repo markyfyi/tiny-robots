@@ -87,19 +87,14 @@
 
   .close-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 5px;
+    right: 17px;
     border: none;
     background: none;
     cursor: pointer;
-    font-size: 21px;
-    width: 25px;
-    height: 25px;
-    line-height: 25px;
+    font-weight: 900;
+    font-size: 27px;
     border-radius: 50%;
-    background: #ffffff99;
-    backdrop-filter: blur(15px) saturate(2);
-    -webkit-backdrop-filter: blur(15px) saturate(2);
   }
 
   .open-button {
@@ -108,6 +103,7 @@
     right: 24px;
     background: #ffffff66;
     backdrop-filter: blur(15px) saturate(2);
+    -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
     padding: 6px;
     font-weight: 900;
