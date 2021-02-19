@@ -97,31 +97,48 @@ You may additionally create a file in the root of your `routes` directory named 
 
 Like their layout cousins, app layouts must also render a default `<slot />`.
 
-#### Data fetching with `prefetch`
+#### Data fetching with `prefetch` and `clientFetch`
+
+Route components may optionally export module-level functions named `prefetch` and `clientFetch`. Both functions are used to call external resources and provide props for the route when it is rendered. Both functions are expected to return objects with key-value pairs corresponding to the props of the component in question.
+
+While they share similar interfaces, they serve different purposes.
+
+`prefetch` is useful for getting data for static rendering. It only runs once, in Node.js at _build time_. Because of this, it lacks access to query parameters or any other pieces request context.
+
+`clientFetch` is useful for fetching dynamic data when the page is being viewed. It runs in the browser when the page is navigated, including the initial page load. Components may optionally export a module-level flag to mark itself as "eager" (`export const eager = true;`). When navigating to an eager component on the client, the router will immediately render the page, then update it once the prefetch resolves.
+
+Tiny Robots also injects a prop named `fetching` into every component (including `_layout` and `_app` components) to indicate the app is waiting on the current route's `clientFetch` call, allowing the UI to respond to interstitial states.
 
 ```html
 <script context="module">
-  export async function prefetch({
+  // ran at build time on your hardware
+  export async function prefetch() {
+    // fetch from your API and
+    // return a promise of the component's props
+    return Promise.resolve({ prefetchedProp: 0 });
+  }
+
+  // ran on navigation in the browser
+  export async function clientFetch({
     params, // object, client-side only - the query parameters from the current url
-    static, // boolean - whether this function is being called in export phase
   }) {
     // fetch from your API and
     // return a promise of the component's props
-    return Promise.resolve({ someProp: 1, someOtherProp: 2 });
+    return Promise.resolve({ clientFetchProp: 1 });
   }
+
+  export const eager = true;
 </script>
 
 <script>
-  export let someProp;
-  export let someOtherProp;
+  // fetch state: managed by tiny robots
+  export let fetching = false;
+  // derived from prefetch above
+  export let prefetchedProp;
+  // derived from clientFetch above
+  export let clientFetchProp;
 </script>
 ```
-
-By default, both server-side builds and client navigation will wait to render until the prefetch promise resolves.
-
-Components can optionally export a module-level flag to mark itself as "eager" (`export let eager = true;`). When navigating to an eager component on the client, the router will immediately render the page without any prefetched props, then update it once the prefetch resolves.
-
-Tiny Robots also injects props named `loading` and `fetching` into every component (including `_layout` and `_app`) to allow the UI to display interstitial states. `loading` indicates that the app is int he middle of a route transition, and `fetching` indicates the app is waiting route in question's `prefetch` call. Note, `loading` and `fetching` can be simultaneously true.
 
 #### Static assets
 
@@ -151,29 +168,33 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- Document new data-fetching.
+- Cleanup.
+  - View source.
+    - Filename.
+    - Modal component.
+    - "This page built by Tiny Robots".
+    - Link to Github
+- `prefetch` context.
+- Universal global fetch for `prefetch`.
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.
   - Social cards.
   - Sitemaps.
-- Better CSS transformation and extraction with postcss.
-- Dynamic routes e.g. `/dir/[slug]`.
-  - "Get static routes" capability.
 - Error pages.
   - Error boundaries.
   - SPA error handling.
-  - Error recovery in dev.
+- Better CSS transformation and extraction with postcss.
+- Dynamic routes e.g. `/dir/[slug]`.
+  - "Get static routes" capability.
+  - Client-only routes.
 
 #### Coming soon
 
 - Plain 'ol JS routes.
+- Error recovery in dev.
+- View source syntax highlighting.
 - Metapages: pages that operate on other page data (i.e. index pages, RSS feeds).
-- Fun: add `--view-source`.
-  - Can move source into a lazy-loaded file.
-  - Can point to GH.
-  - Optionally include syntax highlighting/AST?
-  - Include depencency tree.
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
@@ -193,5 +214,6 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 - SSR mode.
   - Vercel runtime integration.
   - Server hooks.
+- View source: include dependencies with Rollup?
 - Experiment: Support for React pages.
 - Experiment: esbuild for production.
