@@ -64,6 +64,7 @@
     position: fixed;
     background: #ffffff66;
     backdrop-filter: blur(15px) saturate(2);
+    -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
     top: 48px;
     left: 12px;
@@ -98,6 +99,7 @@
     border-radius: 50%;
     background: #ffffff99;
     backdrop-filter: blur(15px) saturate(2);
+    -webkit-backdrop-filter: blur(15px) saturate(2);
   }
 
   .open-button {
