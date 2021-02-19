@@ -33,8 +33,8 @@
     <div class="container">
       <div class="content">
         <h3>🤖 source code of <em>/{pageId}</em></h3>
-        <h4>Route</h4>
         {#if sources[openTo].source}
+          <h4>Route</h4>
           {#if sources[openTo].source.main}
             <pre>{sources[openTo].source.main}</pre>
           {/if}
