@@ -17,7 +17,7 @@
 </script>
 
 {#if ViewSource}
-  <ViewSource pageId="{pageId}" />
+  <svelte:component this="{ViewSource}" pageId="{pageId}" />
 {/if}
 
 <main>

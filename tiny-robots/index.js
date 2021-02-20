@@ -655,8 +655,8 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
 
   // HACK: I'm sorry
   const _transform = sveltePlugin.transform;
-  sveltePlugin.transform = async (code, id) => {
-    const result = await _transform(code, id);
+  sveltePlugin.transform = async function (code, id) {
+    const result = await _transform.apply(this, [code, id]);
 
     onSvelteTransform &&
       onSvelteTransform({
@@ -854,7 +854,6 @@ async function main() {
   } else if (command === "init") {
     init();
   } else if (command === "export") {
-    console.log(process.env);
     try {
       await static({ dev });
     } catch (error) {
