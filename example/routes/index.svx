@@ -170,12 +170,12 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 - Cleanup.
   - View source.
-    - Filename.
-    - Modal component.
-    - "This page built by Tiny Robots".
+    - Use proper, a11y modal.
+    - Use tab layout instead of linear.
     - Link to Github.
-- `prefetch` context - functions available for prefetch.
-  - Universal global fetch.
+    - Syntax highlighting.
+- `prefetch` context - functions available during prefetch.
+- Add universal global `fetch`.
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.

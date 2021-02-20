@@ -1,12 +1,24 @@
 <script>
+  import { onMount } from "svelte";
   import Github from "../components/icons/Github.svelte";
   import NPM from "../components/icons/NPM.svelte";
-  import ViewSource from "../components/ViewSource.svelte";
+
+  let ViewSource;
+
+  onMount(() => {
+    setTimeout(() => {
+      import("../components/ViewSource.svelte").then((m) => {
+        ViewSource = m.default;
+      });
+    }, 500);
+  });
 
   export let pageId;
 </script>
 
-<ViewSource pageId="{pageId}" />
+{#if ViewSource}
+  <ViewSource pageId="{pageId}" />
+{/if}
 
 <main>
   <h1>

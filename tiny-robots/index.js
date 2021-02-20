@@ -410,7 +410,6 @@ async function devServer() {
       res.statusCode = 200;
       res.end(page);
     } catch (error) {
-      console.error(error);
       res.statusCode = 500;
       res.setHeader("Content-Type", "text/plain");
       res.write(`500: Oops, something broke!\n\n${error.stack}`);
@@ -849,6 +848,7 @@ function init() {
 }
 
 async function main() {
+  snowHACK();
   if (!command || command === "dev") {
     devServer();
   } else if (command === "init") {
@@ -865,6 +865,58 @@ async function main() {
   } else {
     console.error("Unrecognized command.");
   }
+}
+
+function stackTrace(x) {
+  return new Error(x).stack;
+}
+
+function snowHACK() {
+  const snowStack = "SnowpackLogger";
+
+  const _log = console.log;
+  console.log = (...args) => {
+    const stack = stackTrace();
+
+    if (stack?.includes(snowStack)) {
+      return;
+    }
+
+    _log(...args);
+  };
+
+  const _info = console.info;
+  console.info = (...args) => {
+    const stack = stackTrace();
+
+    if (stack?.includes(snowStack)) {
+      return;
+    }
+
+    _info(...args);
+  };
+
+  const _warn = console.warn;
+  console.warn = (...args) => {
+    const stack = stackTrace();
+
+    if (stack?.includes(snowStack)) {
+      return;
+    }
+
+    _warn(...args);
+  };
+
+  const _error = console.error;
+  console.error = (...args) => {
+    const stack = stackTrace();
+
+    if (stack?.includes(snowStack)) {
+      return;
+    }
+
+    _error(...args);
+  };
 }
 
 main();

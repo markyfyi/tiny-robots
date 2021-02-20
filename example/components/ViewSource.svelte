@@ -43,7 +43,8 @@
                   >Tiny Robots</a
                 ></small
               >
-            </em> 🤖 #bringbackviewsource
+            </em>
+            🤖 <em><small>#bringbackviewsource</small></em>
           </div>
         </div>
         {#if sources[openTo] && sources[openTo].source}
@@ -71,11 +72,11 @@
     </div>
   </div>
 {:else}
-  <div>
-    <button class="open-button" on:click="{() => (openTo = pageId)}"
-      >{"<view source>"}</button
-    >
-  </div>
+  <button
+    transition:fade="{{ duration: 100 }}"
+    class="open-button"
+    on:click="{() => (openTo = pageId)}">{"<view source>"}</button
+  >
 {/if}
 
 <style>
