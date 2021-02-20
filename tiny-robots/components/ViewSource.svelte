@@ -2,15 +2,23 @@
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
 
-  const isBrowser = typeof window !== "undefined";
-
   export let pageId;
 
-  let openTo;
+  const isBrowser = typeof window !== "undefined";
+
+  let openPageId;
 
   const sources = {};
 
   async function fetchSource(pageId) {
+    if (!pageId) {
+      return;
+    }
+
+    if (sources[pageId] && !sources[pageId].error) {
+      return;
+    }
+
     sources[pageId] = { fetching: true };
 
     try {
@@ -23,12 +31,12 @@
     }
   }
 
-  onMount(() => pageId && fetchSource(pageId));
+  onMount(() => fetchSource(pageId));
 
-  $: isBrowser && pageId && fetchSource(pageId);
+  $: isBrowser && fetchSource(pageId);
 </script>
 
-{#if openTo}
+{#if openPageId}
   <div transition:fade="{{ duration: 100 }}" class="open">
     <div class="container">
       <div class="content">
@@ -47,35 +55,37 @@
             🤖 <em><small>#bringbackviewsource</small></em>
           </div>
         </div>
-        {#if sources[openTo] && sources[openTo].source}
+        {#if sources[openPageId] && sources[openPageId].source}
           <h4>Route</h4>
-          {#if sources[openTo].source.main}
-            <pre>{sources[openTo].source.main}</pre>
+          {#if sources[openPageId].source.main}
+            <pre>{sources[openPageId].source.main}</pre>
           {/if}
           <h4>Compiled route</h4>
-          {#if sources[openTo].source.compiled}
-            <pre>{sources[openTo].source.compiled}</pre>
+          {#if sources[openPageId].source.compiled}
+            <pre>{sources[openPageId].source.compiled}</pre>
           {/if}
           <h4>Generated entry</h4>
-          {#if sources[openTo].source.entry}
-            <pre>{sources[openTo].source.entry}</pre>
+          {#if sources[openPageId].source.entry}
+            <pre>{sources[openPageId].source.entry}</pre>
           {/if}
-        {:else if sources[openTo] && sources[openTo].fetching}
+        {:else if sources[openPageId] && sources[openPageId].fetching}
           <em>Fetching...</em>
-        {:else if sources[openTo] && sources[openTo].error}
+        {:else if sources[openPageId] && sources[openPageId].error}
           <em>Oops! Failed to fetch source code.</em>
         {:else}
           <em>Invalid page</em>
         {/if}
       </div>
-      <button class="close-button" on:click="{() => (openTo = null)}">×</button>
+      <button class="close-button" on:click="{() => (openPageId = null)}"
+        >×</button
+      >
     </div>
   </div>
 {:else}
   <button
     transition:fade="{{ duration: 100 }}"
     class="open-button"
-    on:click="{() => (openTo = pageId)}">{"<view source>"}</button
+    on:click="{() => (openPageId = pageId)}">{"<view source>"}</button
   >
 {/if}
 
