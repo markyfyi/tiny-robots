@@ -195,6 +195,10 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Coming soon
 
+- Routing fixes.
+  - Error handling.
+  - Ignore fetch when on same route.
+  - Client-side subroutes.
 - Dynamic routes e.g. `/dir/[slug]`.
   - "Get static routes" capability.
   - Client-only routes.
@@ -221,7 +225,6 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 - Work with Svelte/Snowpack teams to reduce console noise.
 - Error recovery in dev.
 - Per-component rehydration opt-out (i.e. server-only components).
-- View source: show compiled Svelte compnents (**before** they're rolled up).
 - View source: show dependencies too?
 - Experiment: Support for React pages.
 - Experiment: esbuild for production.

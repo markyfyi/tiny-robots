@@ -482,8 +482,22 @@ async function static({ dev } = {}) {
     hasAppLayout
   );
 
+  const viewSourceCodeCache = new Map();
+
+  const target = join(appPath, routesDirName, "/");
   const build = await rollup(
-    rollupConfig({ fileNames: Object.keys(entries), dev, virtualEntries })
+    rollupConfig({
+      fileNames: Object.keys(entries),
+      dev,
+      virtualEntries,
+      onSvelteTransform: ({ id, output }) => {
+        if (id.startsWith(target)) {
+          const id_ = id.replace(target, "");
+
+          viewSourceCodeCache.set(id_, output);
+        }
+      },
+    })
   );
 
   mkdirp(ap(exportDirName));
@@ -576,12 +590,15 @@ async function static({ dev } = {}) {
         data: prefetchedProps ? join("/", dataPath) : undefined,
       };
 
+      const compiled = viewSourceCodeCache.get(filePath);
+
       if (viewSource) {
         const entryCode = virtualEntries[filePath];
         const sources = {
           ext,
           main: readFileSync(apr(filePath), "utf-8"),
           entry: entryCode,
+          compiled,
         };
 
         mkdirp(join(".", exportDirName, "view-source", "entries", dir));
@@ -630,7 +647,34 @@ function pagesToEntries(pages, hasAppLayout) {
   };
 }
 
-function rollupConfig({ fileNames, dev, virtualEntries }) {
+function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
+  const sveltePlugin = svelte({
+    ...sveltePluginOptions,
+    extensions: [".svelte", ".svx"],
+    emitCss: false,
+  });
+
+  // HACK: I'm sorry
+  const _transform = sveltePlugin.transform;
+  sveltePlugin.transform = async (code, id) => {
+    const result = await _transform(code, id);
+
+    onSvelteTransform &&
+      onSvelteTransform({
+        id,
+        input: code,
+        output: result ? result.code : null,
+      });
+
+    return result;
+  };
+
+  // const _load = sveltePlugin.load;
+  // sveltePlugin.load = (id) => {
+  //   const result = _load(id);
+  //   return result;
+  // };
+
   /** @type {import('rollup').RollupOptions} */
   const options = {
     input: fileNames,
@@ -643,11 +687,7 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
         }),
       }),
       virtual(virtualEntries),
-      svelte({
-        ...sveltePluginOptions,
-        extensions: [".svelte", ".svx"],
-        emitCss: false,
-      }),
+      sveltePlugin,
       nodeResolve({
         ...nodeResolveOptions,
         browser: true,
@@ -678,7 +718,8 @@ function rollupConfig({ fileNames, dev, virtualEntries }) {
 }
 
 function snowpackConfig({ proxyDest }) {
-  return {
+  /** @type {import('snowpack').CommandOptions['config']} */
+  const config = {
     root: appPath,
     mount: {},
     plugins: [
@@ -703,10 +744,13 @@ function snowpackConfig({ proxyDest }) {
       },
     ],
     packageOptions: {
+      polyfillNode: true,
       knownEntrypoints: [routeModulePath, appModulePath],
       rollup: nodeResolveOptions,
     },
   };
+
+  return config;
 }
 
 function allPages(root, dir = "") {
@@ -810,6 +854,7 @@ async function main() {
   } else if (command === "init") {
     init();
   } else if (command === "export") {
+    console.log(process.env);
     try {
       await static({ dev });
     } catch (error) {

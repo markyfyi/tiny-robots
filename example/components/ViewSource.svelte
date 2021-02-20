@@ -32,11 +32,28 @@
   <div transition:fade="{{ duration: 100 }}" class="open">
     <div class="container">
       <div class="content">
-        <h3>🤖 source code of <em>/{pageId}</em></h3>
+        <div class="space">
+          <h3 class="nospace-bottom">
+            Source code for route: <em>/{pageId}</em>
+          </h3>
+          <div>
+            <em>
+              <small
+                >This site was built with <a href="https://tinyrobots.mksh.io/"
+                  >Tiny Robots</a
+                ></small
+              >
+            </em> 🤖 #bringbackviewsource
+          </div>
+        </div>
         {#if sources[openTo] && sources[openTo].source}
           <h4>Route</h4>
           {#if sources[openTo].source.main}
             <pre>{sources[openTo].source.main}</pre>
+          {/if}
+          <h4>Compiled route</h4>
+          {#if sources[openTo].source.compiled}
+            <pre>{sources[openTo].source.compiled}</pre>
           {/if}
           <h4>Generated entry</h4>
           {#if sources[openTo].source.entry}
@@ -45,7 +62,7 @@
         {:else if sources[openTo] && sources[openTo].fetching}
           <em>Fetching...</em>
         {:else if sources[openTo] && sources[openTo].error}
-          <em>Failed to fetch source.</em>
+          <em>Oops! Failed to fetch source code.</em>
         {:else}
           <em>Invalid page</em>
         {/if}
@@ -62,10 +79,18 @@
 {/if}
 
 <style>
+  a {
+    color: rgb(0, 140, 255);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
   .open {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     color: #222;
     position: fixed;
-    background: #ffffff88;
+    background: #ffffff99;
     backdrop-filter: blur(15px) saturate(2);
     -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
@@ -105,6 +130,7 @@
     bottom: 24px;
     right: 24px;
     background: #ffffff88;
+    color: #222;
     backdrop-filter: blur(15px) saturate(2);
     -webkit-backdrop-filter: blur(15px) saturate(2);
     border-radius: 4px;
