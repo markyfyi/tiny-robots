@@ -7,10 +7,10 @@
 
   onMount(() => {
     setTimeout(() => {
-      import("../components/ViewSource.svelte").then((m) => {
+      import("tiny-robots/components/ViewSource.svelte").then((m) => {
         ViewSource = m.default;
       });
-    }, 500);
+    }, 100);
   });
 
   export let pageId;
