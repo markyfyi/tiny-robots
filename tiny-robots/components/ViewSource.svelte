@@ -82,10 +82,8 @@
     </div>
   </div>
 {:else}
-  <button
-    transition:fade="{{ duration: 100 }}"
-    class="open-button"
-    on:click="{() => (openPageId = pageId)}">{"<view source>"}</button
+  <button class="open-button" on:click="{() => (openPageId = pageId)}"
+    >{"<view source>"}</button
   >
 {/if}
 

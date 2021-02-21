@@ -1,19 +1,27 @@
+<script context="module">
+  let ViewSource_;
+
+  async function importViewSource() {
+    if (ViewSource_) return ViewSource_;
+    const m = await import("tiny-robots/components/ViewSource.svelte");
+
+    ViewSource_ = m.default;
+    return ViewSource_;
+  }
+</script>
+
 <script>
   import { onMount } from "svelte";
   import Github from "../components/icons/Github.svelte";
   import NPM from "../components/icons/NPM.svelte";
 
-  let ViewSource;
-
-  onMount(() => {
-    setTimeout(() => {
-      import("tiny-robots/components/ViewSource.svelte").then((m) => {
-        ViewSource = m.default;
-      });
-    }, 100);
-  });
-
   export let pageId;
+
+  let ViewSource = null;
+
+  onMount(async () => {
+    ViewSource = await importViewSource();
+  });
 </script>
 
 {#if ViewSource}
