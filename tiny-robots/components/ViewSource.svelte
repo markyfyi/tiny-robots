@@ -89,7 +89,7 @@
 
 <style>
   a {
-    color: rgb(0, 140, 255);
+    color: #175de2;
     text-decoration: none;
     font-weight: 700;
   }
