@@ -88,18 +88,18 @@
               on:click="{() => selectTab('main')}">Route</button
             >
           {/if}
-          {#if sources[openPageId].source.compiled}
-            <button
-              class="tr-view-source-pill-button"
-              class:selected="{selectedTab === 'compiled'}"
-              on:click="{() => selectTab('compiled')}">Compiled route</button
-            >
-          {/if}
           {#if sources[openPageId].source.entry}
             <button
               class="tr-view-source-pill-button"
               class:selected="{selectedTab === 'entry'}"
-              on:click="{() => selectTab('entry')}">Generated entry</button
+              on:click="{() => selectTab('entry')}">Entry (Generated)</button
+            >
+          {/if}
+          {#if sources[openPageId].source.compiled}
+            <button
+              class="tr-view-source-pill-button"
+              class:selected="{selectedTab === 'compiled'}"
+              on:click="{() => selectTab('compiled')}">Compiled</button
             >
           {/if}
         </div>
@@ -125,9 +125,9 @@
 
 <style>
   :global(.tr-modal) {
-    width: calc(100vw - 4em);
+    width: calc(100vw - 2em);
     max-width: 52em;
-    height: calc(100vh - 4em);
+    height: calc(100vh - 2em);
   }
 
   .tr-view-source-link {
@@ -147,6 +147,7 @@
   }
 
   .tr-view-source-container {
+    color: #222;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
       Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     display: flex;

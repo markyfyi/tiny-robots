@@ -68,13 +68,11 @@
 <style>
   .tr-modal-close-button {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 0px;
+    right: 6px;
     border: none;
     background: none;
     font-size: 24px;
-    width: 38px;
-    height: 38px;
     cursor: pointer;
   }
 
