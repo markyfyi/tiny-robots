@@ -34,7 +34,7 @@
   </h1>
   <center>
     <div class="icon">
-      <a href="https://github.com/mkshio/tiny-robots/tree/master/tiny-robots">
+      <a href="https://github.com/mkshio/tiny-robots/">
         <Github />
       </a>
     </div>

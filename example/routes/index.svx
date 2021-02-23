@@ -168,14 +168,10 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- Cleanup.
-  - View source.
-    - Use proper, a11y modal.
-    - Use tab layout instead of linear.
-    - Link to Github.
-    - Syntax highlighting.
+- View source syntax highlighting.
 - `prefetch` context - functions available during prefetch.
 - Add universal global `fetch`.
+- Support root-level index.css file (if you don't want to create a global dir).
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.

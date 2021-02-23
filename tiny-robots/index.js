@@ -512,7 +512,7 @@ async function static({ dev } = {}) {
   });
 
   /**
-   * @param o {import("rollup").OutputChunk>}
+   * @param o {import("rollup").OutputChunk & { facadeModuleId: string }}
    * @returns {[string, import("rollup").OutputChunk]}
    */
   const mapOutput = (o) => [
@@ -564,6 +564,7 @@ async function static({ dev } = {}) {
           preloads: [...preloadJs, outputFilePath],
           code: undefined,
           dev,
+          hot: false,
         });
         page = p.page;
         prefetchedProps = p.prefetchedProps;
