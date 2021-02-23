@@ -28,7 +28,7 @@
   <svelte:component this="{ViewSource}" pageId="{pageId}" />
 {/if}
 
-<main>
+<main class="app">
   <h1>
     <a href="/">Tiny Robots</a>
   </h1>

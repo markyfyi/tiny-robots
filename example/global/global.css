@@ -1,42 +1,43 @@
 body {
   background-color: var(--background-color);
   color: var(--text-color-primary);
+}
+
+body {
   font-family: Vollkorn, serif;
 }
 
-a {
+.app a {
   font-weight: 600;
   color: var(--text-color-action);
 }
 
-a:visited {
+.app a:visited {
   color: auto;
 }
 
-pre {
+.app pre {
   border-radius: var(--border-radius);
 }
 
-hr {
+.app hr {
   border: none;
   border-bottom: 1px var(--element-color) solid;
 }
 
-code:not([class*="language-"]) {
-  background: var(--highlight-color);
-  padding: 4px;
-  border-radius: var(--border-radius);
-  font-weight: 600;
-}
-
-pre,
-.code {
-  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-}
-
-blockquote {
+.app blockquote {
   padding: 4px 24px;
   border-radius: var(--border-radius);
   box-sizing: border-box;
   background-color: var(--foreground-color);
+}
+
+/* non-prism code */
+.app pre,
+.app code:not([class*="language-"]) {
+  background: var(--highlight-color);
+  padding: 4px;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
 }

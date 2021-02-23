@@ -168,19 +168,20 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Pending
 
-- View source syntax highlighting.
-- `prefetch` context - functions available during prefetch.
+- Scroll restoration.
 - Add universal global `fetch`.
-- Support root-level index.css file (if you don't want to create a global dir).
+- `prefetch` context - functions available during prefetch.
 - SEO defaults.
   - Use svelte-seo.
   - Meta tags.
   - Social cards.
 - Better CSS transformation and extraction with postcss.
+- Support root-level index.css file (if you don't want to create a global dir).
 - Route asset preloads on page transition.
   - Scan for hrefs to other pages and preload their js/css/pages.
   - Image preloads.
     - Add images to manifest.
+- View source syntax highlighting.
 - Error pages.
   - Error reporting.
   - Error boundaries.

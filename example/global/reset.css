@@ -1,67 +1,67 @@
-* {
+.app * {
   margin: 0;
   padding: 0;
-  line-height: 1.6;
 }
 
-html {
+.app {
   font-size: 1.1rem;
+  line-height: 1.65;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-hr,
-pre {
+.app h1,
+.app h2,
+.app h3,
+.app h4,
+.app h5,
+.app h6,
+.app p,
+.app hr,
+.app pre {
   margin-top: 16px;
   margin-bottom: 16px;
 }
 
-h1 {
+.app h1 {
   font-size: 3rem;
   font-weight: 800;
 }
 
-h2 {
+.app h2 {
   font-size: 2.25rem;
 }
 
-h3 {
+.app h3 {
   font-size: 1.5rem;
 }
 
-h4 {
+.app h4 {
   font-size: 1.25rem;
 }
 
-small {
+.app small {
   font-size: 0.8rem;
 }
 
-ul,
-ol {
+.app ul,
+.app ol {
   padding-left: 1.2em;
 }
 
-li {
+.app li {
   margin: 0;
 }
 
-.space {
+.app .space {
   margin-top: 16px;
   margin-bottom: 16px;
 }
 
-.nospace {
+.app .nospace {
   margin-top: 0px;
   margin-bottom: 0px;
 }
 
-.nospace-bottom {
+.app .nospace-bottom {
   margin-top: 0px;
   margin-bottom: 0px;
 }
