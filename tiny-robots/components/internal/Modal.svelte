@@ -3,7 +3,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
 
-  export let closeText;
+  /** @type HTMLDivElement */
   let modalElem;
 
   const dispatch = createEventDispatcher();
@@ -35,11 +35,11 @@
     typeof document !== "undefined" && document.activeElement;
 
   onMount(() => {
-    // document.body.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
   });
 
   onDestroy(() => {
-    // document.body.style.overflow = "scroll";
+    document.body.style.overflow = "scroll";
     if (previouslyFocusedElem) {
       previouslyFocusedElem.focus();
     }

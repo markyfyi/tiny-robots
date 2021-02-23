@@ -185,6 +185,7 @@
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
+    transition: color 200ms, background-color 200ms;
   }
 
   .tr-view-source-pill-button.selected {
@@ -200,6 +201,7 @@
     color: #fff;
     overflow: scroll;
     white-space: pre-wrap;
-    font-size: 0.7rem;
+    font-size: 1rem;
+    flex: 1;
   }
 </style>
