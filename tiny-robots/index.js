@@ -679,6 +679,7 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
   const options = {
     input: fileNames,
     preserveSymlinks: true,
+
     plugins: [
       replace({
         "process.browser": true,
@@ -686,7 +687,12 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
           NODE_ENV: dev ? "development" : "production",
         }),
       }),
-      virtual(virtualEntries),
+      virtual({
+        ...virtualEntries,
+        // HACK: use a plugin instead
+        fs: "export default {}",
+        path: "export default {}",
+      }),
       sveltePlugin,
       nodeResolve({
         ...nodeResolveOptions,
