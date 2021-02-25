@@ -8,6 +8,6 @@
     "export-dev": "rm -fr export && tiny-robots export --dev --view-source"
   },
   "dependencies": {
-    "tiny-robots": "^0.0.27"
+    "tiny-robots": "^0.0.28"
   }
 }
