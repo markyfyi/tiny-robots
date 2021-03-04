@@ -84,6 +84,10 @@ const [, , command, ...restArgs] = process.argv;
 const dev = restArgs.includes("--dev");
 const viewSource = restArgs.includes("--view-source");
 
+const appConfig = existsSync(ap("tinyrobots.config.js"))
+  ? require(ap("tinyrobots.config.js"))
+  : {};
+
 function ap(...ps) {
   return join(appPath, ...ps);
 }
@@ -137,9 +141,15 @@ class Renderer {
       target: "http://localhost:" + devServerPort,
     });
 
-    const config = await loadConfiguration(
-      snowpackConfig({ proxyDest: (req, res) => this.proxy.web(req, res) })
-    );
+    const baseSnowpackConfig = snowpackConfig({
+      proxyDest: (req, res) => this.proxy.web(req, res),
+    });
+
+    const finalSnowpackConfig = appConfig.snowpack
+      ? appConfig.snowpack(baseSnowpackConfig)
+      : baseSnowpackConfig;
+
+    const config = await loadConfiguration(finalSnowpackConfig);
 
     // HACK: remove me once the snowpack patch lands
     const { rollup } = config.packageOptions;
@@ -312,6 +322,22 @@ async function devServer() {
     const segments = path.slice(1).split("/");
     const lastSegment = last(segments);
 
+    const {
+      pageId,
+      pagePathBase,
+      pageDirPath,
+      pagePath,
+      fileName,
+    } = resolveAppPaths(path);
+
+    if (fileName?.endsWith(".html")) {
+      const htmlPath = apr(pagePathBase + ".html");
+      res.setHeader("Content-Type", "text/html");
+      res.statusCode = 200;
+      res.end(read(htmlPath));
+      return;
+    }
+
     let appLayoutUrl;
     let appLayoutPath;
     const hasAppLayout = existsSync(apr(appLayoutModulePath));
@@ -353,27 +379,6 @@ async function devServer() {
     }
 
     try {
-      const {
-        pageId,
-        pagePathBase,
-        pageDirPath,
-        pagePath,
-        fileName,
-      } = resolveAppPaths(path);
-
-      if (!fileName) {
-        const htmlPath = apr(pagePathBase + ".html");
-        if (existsSync(htmlPath)) {
-          res.setHeader("Content-Type", "text/html");
-          res.statusCode = 200;
-          res.end(read(htmlPath));
-          return;
-        }
-
-        error404();
-        return;
-      }
-
       const pageUrl = renderer.getUrl(pagePath);
       const maybeLayoutPath = join(pageDirPath, "_layout.svelte");
 
@@ -486,29 +491,39 @@ async function static({ dev } = {}) {
 
   const hasAppLayout = existsSync(apr("_app.svelte"));
   const hasAppIndex = existsSync(ap("index.js"));
-  const { entries, virtualEntries, fileNamesToEntries } = pagesToEntries(
-    pages,
-    hasAppLayout,
-    hasAppIndex
-  );
+  const {
+    entries,
+    virtualEntries: baseVirtualEntries,
+    fileNamesToEntries,
+  } = pagesToEntries(pages, hasAppLayout, hasAppIndex);
 
   const viewSourceCodeCache = new Map();
 
   const target = join(appPath, routesDirName, "/");
-  const build = await rollup(
-    rollupConfig({
-      fileNames: Object.keys(entries),
-      dev,
-      virtualEntries,
-      onSvelteTransform: ({ id, output }) => {
-        if (id.startsWith(target)) {
-          const id_ = id.replace(target, "");
 
-          viewSourceCodeCache.set(id_, output);
-        }
-      },
-    })
-  );
+  const virtualEntries = {
+    ...baseVirtualEntries,
+    ...appConfig.virtualEntries,
+  };
+
+  const baseRollupConfig = rollupConfig({
+    fileNames: { ...entries, ...(appConfig.entries ?? {}) },
+    dev,
+    virtualEntries,
+    onSvelteTransform: ({ id, output }) => {
+      if (id.startsWith(target)) {
+        const id_ = id.replace(target, "");
+
+        viewSourceCodeCache.set(id_, output);
+      }
+    },
+  });
+
+  const finalRollupConfig = appConfig.rollup
+    ? appConfig.rollup(baseRollupConfig)
+    : baseRollupConfig;
+
+  const build = await rollup(finalRollupConfig);
 
   mkdirp(ap(exportDirName));
   mkdirp(ap(exportDirName, "assets"));
@@ -517,7 +532,9 @@ async function static({ dev } = {}) {
     sourcemap: true,
     hoistTransitiveImports: false,
     compact: true,
-    entryFileNames: "[name].js",
+    entryFileNames: (chunkInfo) => {
+      return chunkInfo.name.replace("_virtual:", "") + ".js";
+    },
     format: "es",
     dir: join(".", exportDirName, assetsDirName),
   });
@@ -691,7 +708,6 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
   const options = {
     input: fileNames,
     preserveSymlinks: true,
-
     plugins: [
       replace({
         "process.browser": true,
