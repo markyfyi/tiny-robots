@@ -192,16 +192,20 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Coming soon
 
-- Routing fixes.
+- Normalize URL schemes between dev and prod.
+  - Asset hashing.
+  - Add user-configured entries to manifest.
+- Routing improvements.
   - Error handling.
   - Ignore fetch when on same route.
-  - Client-side subroutes.
-- Dynamic routes e.g. `/dir/[slug]`.
-  - "Get static routes" capability.
-  - Client-only routes.
+  - Client-side only subroutes.
+  - Dynamic routes (e.g. `/dir/[slug]`).
+    - "Get static routes" capability.
 - Plain 'ol JS routes.
+  - Option for server/client/universal.
+  - Option to declare file type (html, js, json, css, rss, image?)
 - View source syntax highlighting.
-- Metapages: pages that operate on other page data (i.e. index pages, RSS feeds).
+- Metapages: pages that use other page's data (i.e. index pages, RSS feeds).
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.

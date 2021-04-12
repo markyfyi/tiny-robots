@@ -322,28 +322,17 @@ async function devServer() {
     const segments = path.slice(1).split("/");
     const lastSegment = last(segments);
 
-    const {
-      pageId,
-      pagePathBase,
-      pageDirPath,
-      pagePath,
-      fileName,
-    } = resolveAppPaths(path);
-
-    if (fileName?.endsWith(".html")) {
-      const htmlPath = apr(pagePathBase + ".html");
-      res.setHeader("Content-Type", "text/html");
-      res.statusCode = 200;
-      res.end(read(htmlPath));
-      return;
-    }
-
     let appLayoutUrl;
     let appLayoutPath;
     const hasAppLayout = existsSync(apr(appLayoutModulePath));
     if (hasAppLayout) {
       appLayoutPath = appLayoutModulePath;
       appLayoutUrl = renderer.getUrl(appLayoutModulePath);
+    }
+
+    if (["_app", "_layout"].includes(lastSegment)) {
+      error404();
+      return;
     }
 
     if (path === "/assets/manifest") {
@@ -358,11 +347,6 @@ async function devServer() {
       return;
     }
 
-    if (["_app", "_layout"].includes(lastSegment)) {
-      error404();
-      return;
-    }
-
     if (path.startsWith("/_dev_prefetch")) {
       const pagepath = path.replace("/_dev_prefetch", "");
       const { pagePath } = resolveAppPaths(pagepath);
@@ -373,8 +357,19 @@ async function devServer() {
       return;
     }
 
-    if (["_app", "_layout"].includes(lastSegment)) {
-      error404();
+    const {
+      pageId,
+      pagePathBase,
+      pageDirPath,
+      pagePath,
+      fileName,
+    } = resolveAppPaths(path);
+
+    if (fileName?.endsWith(".html")) {
+      const htmlPath = apr(pagePathBase + ".html");
+      res.setHeader("Content-Type", "text/html");
+      res.statusCode = 200;
+      res.end(read(htmlPath));
       return;
     }
 
