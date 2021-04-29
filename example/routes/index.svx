@@ -44,7 +44,7 @@ _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/t
 
 ```shell
 # a simple setup
-yarn add tiny-robots # or npm install tiny-robots
+yarn add svelte tiny-robots # or npm install tiny-robots
 mkdir routes && touch routes/index.svelte # your first route
 
 # create special directories
