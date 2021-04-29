@@ -1,7 +1,6 @@
 // TODO: handle errors
 
 const manifestUrl = "/assets/manifest.json";
-const devManifestUrl = "/assets/manifest";
 
 let pendingIdCtr = 0;
 let lastPendingId = pendingIdCtr;
@@ -12,10 +11,6 @@ async function manifest() {
   if (cachedManifest) return cachedManifest;
   cachedManifest = await (await fetch(manifestUrl)).json();
   return cachedManifest;
-}
-
-async function devManifest() {
-  return await (await fetch(devManifestUrl)).json();
 }
 
 async function bootstrap({ dev, root, page, pageProps, id }) {
@@ -47,6 +42,37 @@ async function bootstrap({ dev, root, page, pageProps, id }) {
   }
 }
 
+const preLoaded = new Set();
+const preLoad = async () => {
+  const links = Array.from(document.querySelectorAll("a"));
+
+  for (const link of links) {
+    if (
+      link.origin !== document.location.origin ||
+      link.pathname === document.location.pathname
+    ) {
+      continue;
+    }
+
+    const match = (await manifest()).paths[link.pathname];
+    if (match && !preLoaded.has(link.pathname)) {
+      preLoaded.add(link.pathname);
+
+      const linkEl = document.createElement("link");
+      linkEl.rel = "modulepreload";
+      linkEl.href = match.js;
+      document.head.appendChild(linkEl);
+
+      if (match.data) {
+        const linkEl = document.createElement("link");
+        linkEl.rel = "preload";
+        linkEl.as = "fetch";
+        linkEl.href = match.data;
+        document.head.appendChild(linkEl);
+      }
+    }
+  }
+};
 export function start({ root, dev, page, pageProps }) {
   async function navigate(url, push) {
     const pathname =
@@ -73,7 +99,7 @@ export function start({ root, dev, page, pageProps }) {
 
       if (entry) {
         const [m, data] = await Promise.all([
-          import(entry.js),
+          import(/* @vite-ignore */ entry.js),
           entry.data ? fetch(entry.data).then((r) => r.json()) : null,
         ]);
 
@@ -95,6 +121,9 @@ export function start({ root, dev, page, pageProps }) {
           params,
           data
         );
+
+        setTimeout(preLoad, 1000);
+
         return true;
       }
     }
@@ -126,6 +155,7 @@ export function start({ root, dev, page, pageProps }) {
 
   if (!dev) {
     manifest();
+    setTimeout(preLoad, 1000);
   }
 
   bootstrap({ root, dev, page, pageProps, id: pendingIdCtr });
@@ -173,7 +203,7 @@ async function update(
 }
 
 async function __dev__navigate({ root, pathname, id, params }) {
-  const manifest = await devManifest();
+  const manifest = await (await fetch(manifestUrl)).json();
   const entry = manifest.paths[pathname];
   if (lastPendingId !== id) {
     return;
@@ -181,10 +211,12 @@ async function __dev__navigate({ root, pathname, id, params }) {
 
   if (entry) {
     const [pageModule, layoutModule, appLayoutModule] = await Promise.all([
-      import(entry.js),
-      entry.__dev__layoutJs ? import(entry.__dev__layoutJs) : null,
+      import(/* @vite-ignore */ entry.js),
+      entry.__dev__layoutJs
+        ? import(/* @vite-ignore */ entry.__dev__layoutJs)
+        : null,
       manifest.__dev__appLayoutUrl
-        ? import(manifest.__dev__appLayoutUrl)
+        ? import(/* @vite-ignore */ manifest.__dev__appLayoutUrl)
         : null,
     ]);
 

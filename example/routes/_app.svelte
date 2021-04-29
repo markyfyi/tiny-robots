@@ -3,7 +3,9 @@
 
   async function importViewSource() {
     if (ViewSource_) return ViewSource_;
-    const m = await import("tiny-robots/components/ViewSource.svelte");
+    const m = await import(
+      "../node_modules/tiny-robots/components/ViewSource.svelte"
+    );
 
     ViewSource_ = m.default;
     return ViewSource_;
@@ -50,12 +52,13 @@
   <hr />
   <h3>Sample pages</h3>
   <nav>
-    <ul>
-      <li><a href="/eager">eager pre-fetch</a></li>
-      <li><a href="/blocking?arg=1">blocking pre-fetch</a></li>
+    <ul class="samples">
+      <li><a href="/eager">eager</a></li>
+      <li><a href="/blocking?arg=1">blocking</a></li>
       <li><a href="/path/">path</a></li>
       <li><a href="/secondary">secondary</a></li>
       <li><a href="/path/secondary">path secondary</a></li>
+      <li><a href="/meta">meta</a></li>
     </ul>
   </nav>
 </main>

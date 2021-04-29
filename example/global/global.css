@@ -41,3 +41,7 @@ body {
   font-size: 0.9rem;
   font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
 }
+
+.app pre {
+  overflow: scroll;
+}

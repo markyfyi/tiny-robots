@@ -1,4 +1,9 @@
 <script context="module">
+  export const metadata = {
+    name: "Blocking",
+    desc: "Demo of a fetch that blocks on the client.",
+  };
+
   export async function prefetch() {
     return new Promise((n) =>
       setTimeout(() => n({ wasStaticPrefetched: true }), 300)

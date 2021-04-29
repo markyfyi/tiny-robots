@@ -8,25 +8,24 @@ const {
   existsSync,
   statSync,
 } = require("fs");
-const { createServer } = require("http");
-
-const { startServer, loadConfiguration } = require("snowpack");
-const { rollup } = require("rollup");
 
 const { sync: mkdirp } = require("mkdirp");
-const httpProxy = require("http-proxy");
 const htmlMinifier = require("html-minifier");
-// const { typescript: svelteTypescript } = require("svelte-preprocess");
 const { mdsvex } = require("mdsvex");
+// const { typescript: svelteTypescript } = require("svelte-preprocess");
 
-const svelte = require("rollup-plugin-svelte");
+const express = require("express");
+const vite = require("vite");
+const { default: svelteVite } = require("@sveltejs/vite-plugin-svelte");
+
+const { rollup } = require("rollup");
+const svelteRollup = require("rollup-plugin-svelte");
 const { terser } = require("rollup-plugin-terser");
 const { nodeResolve } = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const replace = require("@rollup/plugin-replace");
 const postcss = require("rollup-plugin-postcss");
 const copy = require("rollup-plugin-copy");
-const svelteRollupPlugin = require("rollup-plugin-svelte");
 const virtual = require("@rollup/plugin-virtual");
 
 // consts
@@ -37,15 +36,14 @@ const htmlPath = "index.html";
 const rollupVirtualFilePrefix = "\x00virtual:";
 const globalAssetsPath = "global";
 const appLayoutModulePath = "/_app.svelte";
-const routePath = "/_snowpack/pkg/tiny-robots/runtime/Route.svelte.js";
-const ssrAppSnowpackPath = "/_snowpack/pkg/tiny-robots/runtime/app.js";
-const routeModulePath = "tiny-robots/runtime/Route.svelte";
+const routeModulePath = "./node_modules/tiny-robots/runtime/Route.svelte";
 const appModulePath = "tiny-robots/runtime/app";
-const ssrRouteModulePath = "/node_modules/tiny-robots/runtime/Route.svelte.js";
+const devAppModulePath = "/node_modules/tiny-robots/runtime/app";
+const devRouteModulePath = "/node_modules/tiny-robots/runtime/Route";
 const isSPA = true;
-const devServerPort = 8081;
 
-const defaultHtmlLayout = `<!DOCTYPE html>
+// templates
+const defaultHtmlLayout = /* html */ `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -64,26 +62,29 @@ const indexTemplate = /* html */ `<div style="width: 640px; margin: 0 auto;">
 </div>
 `;
 
+// opts
 const nodeResolveOptions = {
   dedupe: ["svelte"],
 };
+
 const sveltePluginOptions = {
   preprocess: mdsvex(),
   compilerOptions: {
     hydratable: true,
   },
 };
+
 const htmlMinifyOptions = {
   collapseWhitespace: true,
   conservativeCollapse: true,
   minifyCSS: true,
 };
 
+// env
 const appPath = process.cwd();
 const [, , command, ...restArgs] = process.argv;
 const dev = restArgs.includes("--dev");
 const viewSource = restArgs.includes("--view-source");
-
 const appConfig = existsSync(ap("tinyrobots.config.js"))
   ? require(ap("tinyrobots.config.js"))
   : {};
@@ -137,51 +138,36 @@ function resolveAppPaths(path) {
 
 class Renderer {
   async init() {
-    this.proxy = httpProxy.createServer({
-      target: "http://localhost:" + devServerPort,
+    this.server = await vite.createServer({
+      // any valid user config options, plus `mode` and `configFile`
+      root: appPath,
+      server: {
+        middlewareMode: true,
+      },
+      resolve: {
+        extensions: [
+          ".mjs",
+          ".js",
+          ".ts",
+          ".jsx",
+          ".tsx",
+          ".json",
+          ".svelte",
+          ".svx",
+        ],
+      },
+      plugins: [
+        svelteVite({
+          preprocess: [mdsvex()],
+          extensions: [".svelte", ".svx"],
+        }),
+      ],
+      clearScreen: false,
     });
-
-    const baseSnowpackConfig = snowpackConfig({
-      proxyDest: (req, res) => this.proxy.web(req, res),
-    });
-
-    const finalSnowpackConfig = appConfig.snowpack
-      ? appConfig.snowpack(baseSnowpackConfig)
-      : baseSnowpackConfig;
-
-    const config = await loadConfiguration(finalSnowpackConfig);
-
-    // HACK: remove me once the snowpack patch lands
-    const { rollup } = config.packageOptions;
-    rollup.plugins = rollup.plugins
-      .filter((p) => p.name !== "svelte")
-      .concat(
-        svelteRollupPlugin({
-          include: /\.svelte$/,
-          compilerOptions: {
-            dev: process.env.NODE_ENV !== "production",
-            hydratable: true,
-          },
-          emitCss: false,
-        })
-      );
-
-    this.server = await startServer({
-      config,
-      lockfile: null,
-    });
-
-    this.runtime = this.server.getServerRuntime();
-  }
-
-  getUrl(path) {
-    return this.server.getUrlForFile(apr(path));
   }
 
   async prefetchPath(path) {
-    const pageUrl = this.server.getUrlForFile(apr(path));
-    const { prefetch } = (await this.runtime.importModule(pageUrl)).exports;
-
+    const { prefetch } = await this.server.ssrLoadModule(path);
     if (prefetch) {
       return prefetch({ static: true, params: {} });
     }
@@ -191,10 +177,10 @@ class Renderer {
     path,
     { pageId, src, code, preloads, layoutPath, appLayoutPath, dev, hot }
   ) {
-    const pageUrl = this.server.getUrlForFile(apr(path));
-    const { default: pageComponent, prefetch } = (
-      await this.runtime.importModule(pageUrl)
-    ).exports;
+    const {
+      default: pageComponent,
+      prefetch,
+    } = await this.server.ssrLoadModule(apr(path));
 
     let prefetchedProps;
     if (prefetch) {
@@ -217,7 +203,6 @@ start({ pageProps: ${stringifiedProps}, hydrate: true });
 </script>`;
     } else if (src) {
       script += `
-<link rel="modulepreload" href="${src}">
 <script type="module">
 import { start } from '${src}';
 start({ pageProps: ${stringifiedProps}, hydrate: true });
@@ -230,19 +215,18 @@ start({ pageProps: ${stringifiedProps}, hydrate: true });
 
     let layoutComponent;
     if (layoutPath) {
-      const url = this.server.getUrlForFile(apr(layoutPath));
-      layoutComponent = (await this.runtime.importModule(url)).exports.default;
+      layoutComponent = (await this.server.ssrLoadModule(apr(layoutPath)))
+        .default;
     }
 
     let appLayoutComponent;
     if (appLayoutPath) {
-      const url = this.server.getUrlForFile(apr(appLayoutPath));
-      appLayoutComponent = (await this.runtime.importModule(url)).exports
+      appLayoutComponent = (await this.server.ssrLoadModule(apr(appLayoutPath)))
         .default;
     }
 
-    const RouteComponent = (await this.runtime.importModule(ssrRouteModulePath))
-      .exports.default;
+    const RouteComponent = (await this.server.ssrLoadModule(devRouteModulePath))
+      .default;
 
     const {
       head: pageHead,
@@ -271,7 +255,7 @@ start({ pageProps: ${stringifiedProps}, hydrate: true });
     let devHotGlobalCss;
     if (hot) {
       const cssImports = globalFiles.css
-        .map(({ path }) => `import "${path}.proxy.js";`)
+        .map(({ path }) => `import "${path}";`)
         .join("\n");
 
       devHotGlobalCss = `<script type="module">
@@ -301,24 +285,30 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
   }
 
   async stop() {
-    this.proxy.close();
-    await this.server.shutdown();
+    await this.server.close();
   }
 }
 
 async function devServer() {
+  this.hostServer = express();
   const renderer = new Renderer();
 
   await renderer.init();
 
-  createServer(async (req, res) => {
+  this.hostServer.use(renderer.server.middlewares);
+
+  await new Promise((r) => {
+    this.hostServer.listen(3000, () => r());
+  });
+
+  this.hostServer.use(async (req, res) => {
     function error404() {
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/plain");
       res.end("404: Not found");
     }
 
-    const [path] = req.url.split("?");
+    const path = req.path;
     const segments = path.slice(1).split("/");
     const lastSegment = last(segments);
 
@@ -327,21 +317,24 @@ async function devServer() {
     const hasAppLayout = existsSync(apr(appLayoutModulePath));
     if (hasAppLayout) {
       appLayoutPath = appLayoutModulePath;
-      appLayoutUrl = renderer.getUrl(appLayoutModulePath);
+      appLayoutUrl = join("/", routesDirName, appLayoutModulePath);
     }
 
-    if (["_app", "_layout"].includes(lastSegment)) {
+    if (
+      ["_app", "_layout"].includes(lastSegment) ||
+      path.startsWith("/view-source")
+    ) {
       error404();
       return;
     }
 
-    if (path === "/assets/manifest") {
+    if (path === "/assets/manifest.json") {
       res.setHeader("Content-Type", "application/json");
       res.statusCode = 200;
       res.end(
         JSON.stringify({
           __dev__appLayoutUrl: appLayoutUrl,
-          paths: devManifest(),
+          paths: genDevManifest(),
         })
       );
       return;
@@ -352,29 +345,29 @@ async function devServer() {
       const { pagePath } = resolveAppPaths(pagepath);
       res.setHeader("Content-Type", "application/json");
       res.statusCode = 200;
-      const data = await renderer.prefetchPath(pagePath);
+      const data = await renderer.prefetchPath(apr(pagePath));
       res.end(JSON.stringify(data));
       return;
     }
 
-    const {
-      pageId,
-      pagePathBase,
-      pageDirPath,
-      pagePath,
-      fileName,
-    } = resolveAppPaths(path);
-
-    if (fileName?.endsWith(".html")) {
-      const htmlPath = apr(pagePathBase + ".html");
-      res.setHeader("Content-Type", "text/html");
-      res.statusCode = 200;
-      res.end(read(htmlPath));
-      return;
-    }
-
     try {
-      const pageUrl = renderer.getUrl(pagePath);
+      const {
+        pageId,
+        pagePathBase,
+        pageDirPath,
+        pagePath,
+        fileName,
+      } = resolveAppPaths(path);
+
+      if (fileName?.endsWith(".html")) {
+        const htmlPath = apr(pagePathBase + ".html");
+        res.setHeader("Content-Type", "text/html");
+        res.statusCode = 200;
+        res.end(read(htmlPath));
+        return;
+      }
+
+      const pageUrl = join("/", routesDirName, pagePathBase);
       const maybeLayoutPath = join(pageDirPath, "_layout.svelte");
 
       let layoutUrl;
@@ -382,7 +375,7 @@ async function devServer() {
       const hasLayout = existsSync(maybeLayoutPath);
       if (hasLayout) {
         layoutPath = join(dirname(pagePathBase), "_layout.svelte");
-        layoutUrl = renderer.getUrl(layoutPath);
+        layoutUrl = apr(layoutPath);
       }
 
       let indexUrl;
@@ -397,8 +390,8 @@ async function devServer() {
         pageUrl,
         layoutUrl,
         appLayoutUrl,
-        routePath,
-        ssrAppSnowpackPath,
+        devRouteModulePath,
+        devAppModulePath,
         isSPA,
         true
       );
@@ -417,72 +410,21 @@ async function devServer() {
       res.statusCode = 200;
       res.end(page);
     } catch (error) {
+      console.error(error);
       res.statusCode = 500;
       res.setHeader("Content-Type", "text/plain");
       res.write(`500: Oops, something broke!\n\n${error.stack}`);
       res.end();
       return;
     }
-  }).listen(devServerPort);
-}
-
-function genEntry(
-  pageId,
-  indexUrl,
-  pageUrl,
-  layoutUrl,
-  appLayoutUrl,
-  routeUrl,
-  appUrl,
-  isSPA,
-  isDev
-) {
-  return `// generated by tiny robots
-${indexUrl ? `import '${indexUrl}';` : ``}
-import Route from "${routeUrl}";
-import * as page from '${pageUrl}';
-${layoutUrl ? `import Layout from '${layoutUrl}';` : `const Layout = null;`}
-${
-  appLayoutUrl
-    ? `import AppLayout from '${appLayoutUrl}';`
-    : `const AppLayout = null;`
-}
-
-const start = ({ pageProps, hydrate }) => {
-  const root = new Route({
-    target: document.body,
-    hydrate,
-    props: {
-      ...routeProps(),
-      pageId: "${pageId}",
-      fetching: true,
-      pageProps
-    }
   });
-
-  ${
-    isSPA
-      ? `import("${appUrl}")
-    .then(m => m.start({ root, dev: ${!!isDev}, page, pageProps }));`
-      : ""
-  }
-}
-
-const routeProps = () => ({
-  appLayoutComponent: AppLayout,
-  layoutComponent: Layout,
-  pageComponent: page.default,
-})
-
-export { page, start, routeProps };
-`;
 }
 
 async function static({ dev } = {}) {
   const renderer = new Renderer();
   await renderer.init();
 
-  const pages = allPages(apr("."));
+  const pages = getAllPAges(apr("."));
 
   const hasAppLayout = existsSync(apr("_app.svelte"));
   const hasAppIndex = existsSync(ap("index.js"));
@@ -501,7 +443,7 @@ async function static({ dev } = {}) {
     ...appConfig.virtualEntries,
   };
 
-  const baseRollupConfig = rollupConfig({
+  const baseRollupConfig = getRollupConfig({
     fileNames: { ...entries, ...(appConfig.entries ?? {}) },
     dev,
     virtualEntries,
@@ -524,7 +466,7 @@ async function static({ dev } = {}) {
   mkdirp(ap(exportDirName, "assets"));
   mkdirp(ap(exportDirName, "assets", "_data"));
   const bundle = await build.write({
-    sourcemap: true,
+    sourcemap: dev,
     hoistTransitiveImports: false,
     compact: true,
     entryFileNames: (chunkInfo) => {
@@ -671,8 +613,13 @@ function pagesToEntries(pages, hasAppLayout, hasAppIndex) {
   };
 }
 
-function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
-  const sveltePlugin = svelte({
+function getRollupConfig({
+  fileNames,
+  dev,
+  virtualEntries,
+  onSvelteTransform,
+}) {
+  const sveltePlugin = svelteRollup({
     ...sveltePluginOptions,
     extensions: [".svelte", ".svx"],
     emitCss: false,
@@ -692,12 +639,6 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
 
     return result;
   };
-
-  // const _load = sveltePlugin.load;
-  // sveltePlugin.load = (id) => {
-  //   const result = _load(id);
-  //   return result;
-  // };
 
   /** @type {import('rollup').RollupOptions} */
   const options = {
@@ -746,44 +687,7 @@ function rollupConfig({ fileNames, dev, virtualEntries, onSvelteTransform }) {
   return options;
 }
 
-function snowpackConfig({ proxyDest }) {
-  /** @type {import('snowpack').CommandOptions['config']} */
-  const config = {
-    root: appPath,
-    mount: {},
-    exclude: [ap("export"), ap("build")],
-    plugins: [
-      [
-        "@snowpack/plugin-svelte",
-        {
-          ...sveltePluginOptions,
-          input: [".svelte", ".svx"],
-        },
-      ],
-    ],
-    devOptions: {
-      open: "none",
-      output: "stream",
-    },
-    buildOptions: {},
-    routes: [
-      {
-        match: "routes",
-        src: ".*",
-        dest: proxyDest,
-      },
-    ],
-    packageOptions: {
-      polyfillNode: true,
-      knownEntrypoints: [routeModulePath, appModulePath],
-      rollup: nodeResolveOptions,
-    },
-  };
-
-  return config;
-}
-
-function allPages(root, dir = "") {
+function getAllPAges(root, dir = "") {
   let pages = [];
   const dirents = readdirSync(join(root, dir), { withFileTypes: true });
   const hasLayout = !!dirents.find(
@@ -794,7 +698,7 @@ function allPages(root, dir = "") {
     if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
       continue;
     } else if (dirent.isDirectory()) {
-      for (const page of allPages(root, join(dir, dirent.name))) {
+      for (const page of getAllPAges(root, join(dir, dirent.name))) {
         pages.push(page);
       }
     } else if ([".svelte", ".svx"].includes(ext)) {
@@ -813,8 +717,60 @@ function allPages(root, dir = "") {
   return pages;
 }
 
-function devManifest() {
-  const pages = allPages(apr("."));
+function genEntry(
+  pageId,
+  indexUrl,
+  pageUrl,
+  layoutUrl,
+  appLayoutUrl,
+  routeUrl,
+  appUrl,
+  isSPA,
+  isDev
+) {
+  return `// generated by tiny robots
+${indexUrl ? `import '${indexUrl}';` : ``}
+import Route from "${routeUrl}";
+import * as page from '${pageUrl}';
+${layoutUrl ? `import Layout from '${layoutUrl}';` : `const Layout = null;`}
+${
+  appLayoutUrl
+    ? `import AppLayout from '${appLayoutUrl}';`
+    : `const AppLayout = null;`
+}
+
+const start = ({ pageProps, hydrate }) => {
+  const root = new Route({
+    target: document.body,
+    hydrate,
+    props: {
+      ...routeProps(),
+      pageId: "${pageId}",
+      fetching: true,
+      pageProps
+    }
+  });
+
+  ${
+    isSPA
+      ? `import("${appUrl}")
+    .then(m => m.start({ root, dev: ${!!isDev}, page, pageProps }));`
+      : ""
+  }
+}
+
+const routeProps = () => ({
+  appLayoutComponent: AppLayout,
+  layoutComponent: Layout,
+  pageComponent: page.default,
+})
+
+export { page, start, routeProps };
+`;
+}
+
+function genDevManifest() {
+  const pages = getAllPAges(apr("."));
 
   const manifest = {};
 
@@ -822,9 +778,9 @@ function devManifest() {
     manifest[path] = {
       pageId,
       path,
-      js: join("/", routesDirName, filePath + ".js"),
+      js: join("/", routesDirName, filePath),
       __dev__layoutJs: hasLayout
-        ? join("/", routesDirName, dir, "_layout.svelte.js")
+        ? join("/", routesDirName, dir, "_layout.svelte")
         : null,
     };
   }
@@ -879,74 +835,15 @@ function init() {
 }
 
 async function main() {
-  snowHACK();
   if (!command || command === "dev") {
     devServer();
   } else if (command === "init") {
     init();
   } else if (command === "export") {
-    try {
-      await static({ dev });
-    } catch (error) {
-      console.error(error);
-      process.exit(1);
-    }
-    process.exit(0);
+    await static({ dev });
   } else {
     console.error("Unrecognized command.");
   }
-}
-
-function stackTrace(x) {
-  return new Error(x).stack;
-}
-
-function snowHACK() {
-  const snowStack = "SnowpackLogger";
-
-  const _log = console.log;
-  console.log = (...args) => {
-    const stack = stackTrace();
-
-    if (stack?.includes(snowStack)) {
-      return;
-    }
-
-    _log(...args);
-  };
-
-  const _info = console.info;
-  console.info = (...args) => {
-    const stack = stackTrace();
-
-    if (stack?.includes(snowStack)) {
-      return;
-    }
-
-    _info(...args);
-  };
-
-  const _warn = console.warn;
-  console.warn = (...args) => {
-    const stack = stackTrace();
-
-    if (stack?.includes(snowStack)) {
-      return;
-    }
-
-    _warn(...args);
-  };
-
-  const _error = console.error;
-  console.error = (...args) => {
-    const stack = stackTrace();
-
-    if (stack?.includes(snowStack)) {
-      return;
-    }
-
-    _error(...args);
-  };
 }
 
 main();

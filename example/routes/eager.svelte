@@ -1,6 +1,11 @@
 <script context="module">
   export const eager = true;
 
+  export const metadata = {
+    name: "Eager",
+    desc: "Demo of a fetch with a non-blocking, loading state..",
+  };
+
   export async function prefetch() {
     return new Promise((n) =>
       setTimeout(() => n({ wasStaticPrefetched: true }), 300)

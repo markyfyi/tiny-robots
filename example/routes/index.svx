@@ -1,10 +1,15 @@
-Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you ship ambitious web apps faster.
+---
+name: Index
+desc: The landing page.
+---
+
+Tiny Robots is a frontend anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) and [Vite](https://vitejs.dev/guide/why.html) designed help you ship ambitious web apps faster.
 
 ### Features 🌈
 
 - Fast dev mode, fast build step, fast runtime.
 - A minimal surface area - less code you have to remember.
-- 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot-swapping completes in the order of milliseconds and stays that way no matter how large your app gets.
+- 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Vite](https://www.vitejs.dev/) for module processing, so hot-reloads complete in the order of milliseconds and stay snappy no matter how large your app gets.
 - Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
 - Static site generation with dynamic data loading. Just run `yarn run tr export`.
 - Client side routing with automatic data fetching.
@@ -12,7 +17,7 @@ Tiny Robots is a frontend build system and anti-framework built on top of [Svelt
 - Global CSS/JS support for stuff like vendor code or analytics. Just create a `global` directory and all of it's contents will get inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
-¹What's hot module replacement? Here's the definition [straight from Snowpack](https://www.snowpack.dev/concepts/hot-module-replacement):
+¹What's hot module replacement? Here's [Snowpack's definition](https://www.snowpack.dev/concepts/hot-module-replacement):
 
 > _Hot Module Replacement (HMR) is the ability to push file updates to the browser without triggering a full page refresh. Imagine changing some CSS [or JavaScript, or a Svelte file], hitting save, and then instantly seeing your change reflected on the page without a refresh. That’s HMR._
 
@@ -56,7 +61,7 @@ mkdir global # optional - global css/j"s files go here; they'll automatically be
 yarn run tr
 ```
 
-Runs your app with [Snowpack](https://www.snowpack.dev/).
+Runs your app with [Vite](https://www.vitejs.dev/).
 
 ### 3. Ship 🚀
 
@@ -176,7 +181,7 @@ Note: unlike static assets, global assets aren't available in the `export` direc
   - Meta tags.
   - Social cards.
 - Better CSS transformation and extraction with postcss.
-- Support root-level index.css file (if you don't want to create a global dir).
+- Support root-level index.css file (if you don't want to create a `./global` dir).
 - Route asset preloads on page transition.
   - Scan for hrefs to other pages and preload their js/css/pages.
   - Image preloads.
@@ -205,7 +210,6 @@ Note: unlike static assets, global assets aren't available in the `export` direc
   - Option for server/client/universal.
   - Option to declare file type (html, js, json, css, rss, image?)
 - View source syntax highlighting.
-- Metapages: pages that use other page's data (i.e. index pages, RSS feeds).
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
@@ -223,9 +227,9 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 - More HTML features.
   - Partials.
   - Merge head/body with template/layouts.
-- Work with Svelte/Snowpack teams to reduce console noise.
+- Work with Svelte team to reduce console noise.
 - Error recovery in dev.
 - Per-component rehydration opt-out (i.e. server-only components).
 - View source: show dependencies too?
 - Experiment: Support for React pages.
-- Experiment: esbuild for production.
+- Deferred JS load with intersection observers.

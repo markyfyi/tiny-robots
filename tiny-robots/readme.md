@@ -8,7 +8,7 @@ Please see [documentation here](https://tinyrobots.mksh.io).
 
 - Fast dev mode, fast build step, fast runtime.
 - A minimal surface area - less code you have to remember.
-- 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Snowpack](https://www.snowpack.dev/) in development mode, so hot-swapping completes in the order of milliseconds and stays that way no matter how large your app gets.
+- 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Vite](https://www.vitejs.dev/) for module processing, so hot-reloads complete in the order of milliseconds and stay snappy no matter how large your app gets.
 - Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
 - Static site generation with dynamic data loading. Just run `yarn run tr export`.
 - Client side routing with automatic data fetching.
