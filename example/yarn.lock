@@ -2576,10 +2576,10 @@ tiny-emitter@^2.0.0:
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.1.0.tgz#1d1a56edfc51c43e863cbb5382a72330e3555423"
   integrity sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==
 
-tiny-robots@^0.0.33:
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/tiny-robots/-/tiny-robots-0.0.33.tgz#7ff9f8c55ea55c24dbf5bd66498e9d9f560b5ecb"
-  integrity sha512-3RTv+urRsNRRtAaDw33EUGHbpTP3QZnkAz64tQ7f8B0D08C5HxIYUvQy5FK8L2qDp9ZTBHnjdAXR347Xb5+pEQ==
+tiny-robots@^0.0.35:
+  version "0.0.35"
+  resolved "https://registry.yarnpkg.com/tiny-robots/-/tiny-robots-0.0.35.tgz#2d5dd972bfa96af5f4270ca05d2d677344a5b2cc"
+  integrity sha512-yvZHEXlcEeWuklkr5/UlK1mWCX7obPMWXVog9fMh7TB30MqxoOFT50Y1lII/XVhWzKlyjp07YhnjHSgPJgxbqA==
   dependencies:
     "@rollup/plugin-babel" "^5.2.3"
     "@rollup/plugin-commonjs" "^17.1.0"
@@ -2602,7 +2602,6 @@ tiny-robots@^0.0.33:
     rollup-plugin-styles "^3.14.1"
     rollup-plugin-svelte "^7.1.0"
     rollup-plugin-terser "^7.0.2"
-    svelte "^3.37.0"
     svelte-preprocess "^4.7.2"
     typescript "^4.1.5"
     vite "^2.2.3"

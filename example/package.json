@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "svelte": "^3.37.0",
-    "tiny-robots": "^0.0.33"
+    "tiny-robots": "^0.0.35"
   }
 }
