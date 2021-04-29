@@ -1,2 +1,7 @@
-yarn --cwd ./example add tiny-robots
-yarn --cwd ./example link tiny-robots
+#! /bin/bash
+
+yarn --cwd ./tiny-robots publish --patch
+. ./scripts/readdlink.sh
+git add -A
+git commit -m "."
+git push
