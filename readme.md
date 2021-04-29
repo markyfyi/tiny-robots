@@ -1,4 +1,4 @@
-# Tiny Robots
+# Tiny Robots {⍺}
 
 Tiny Robots is a frontend build system and anti-framework built on top of [Svelte](https://svelte.dev/blog/svelte-3-rethinking-reactivity#What_is_Svelte) designed help you ship ambitious web apps faster.
 
