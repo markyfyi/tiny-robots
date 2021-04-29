@@ -65,9 +65,10 @@ const preLoad = async () => {
 
       if (match.data) {
         const linkEl = document.createElement("link");
+        linkEl.href = match.data;
         linkEl.rel = "preload";
         linkEl.as = "fetch";
-        linkEl.href = match.data;
+        linkEl.type = "application/json";
         document.head.appendChild(linkEl);
       }
     }
@@ -100,7 +101,13 @@ export function start({ root, dev, page, pageProps }) {
       if (entry) {
         const [m, data] = await Promise.all([
           import(/* @vite-ignore */ entry.js),
-          entry.data ? fetch(entry.data).then((r) => r.json()) : null,
+          entry.data
+            ? fetch(entry.data, {
+                method: "GET",
+                credentials: "include",
+                mode: "no-cors",
+              }).then((r) => r.json())
+            : null,
         ]);
 
         if (lastPendingId !== id) {
@@ -122,7 +129,7 @@ export function start({ root, dev, page, pageProps }) {
           data
         );
 
-        setTimeout(preLoad, 1000);
+        setTimeout(preLoad, 200);
 
         return true;
       }
@@ -155,7 +162,7 @@ export function start({ root, dev, page, pageProps }) {
 
   if (!dev) {
     manifest();
-    setTimeout(preLoad, 1000);
+    setTimeout(preLoad, 200);
   }
 
   bootstrap({ root, dev, page, pageProps, id: pendingIdCtr });
