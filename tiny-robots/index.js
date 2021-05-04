@@ -1,5 +1,27 @@
 #!/usr/bin/env node
 
+/**
+ * @typedef {Object} RenderOptions
+ * @property {string} pageId
+ * @property {string | null | undefined} src
+ * @property {string | null | undefined} code
+ * @property {string[] | null | undefined} preloads
+ * @property {string | null | undefined} layoutPath
+ * @property {string | null | undefined} appLayoutPath
+ * @property {boolean} dev
+ * @property {boolean} hot
+ */
+
+/**
+ * @typedef PageRecord
+ * @property {string} pageId
+ * @property {string} path
+ * @property {string} dir
+ * @property {boolean} hasLayout
+ * @property {string} filePath
+ * @property {string} name
+ */
+
 const { join, dirname, extname, basename, parse } = require("path");
 const {
   readFileSync,
@@ -22,11 +44,19 @@ const { rollup } = require("rollup");
 const svelteRollup = require("rollup-plugin-svelte");
 const { terser } = require("rollup-plugin-terser");
 const { nodeResolve } = require("@rollup/plugin-node-resolve");
-const commonjs = require("@rollup/plugin-commonjs");
-const replace = require("@rollup/plugin-replace");
-const postcss = require("rollup-plugin-postcss");
-const copy = require("rollup-plugin-copy");
 const virtual = require("@rollup/plugin-virtual");
+/** @type {import("@rollup/plugin-commonjs").default} */
+// @ts-ignore
+const commonjs = require("@rollup/plugin-commonjs");
+/** @type {import("@rollup/plugin-replace").default} */
+// @ts-ignore
+const replace = require("@rollup/plugin-replace");
+/** @type {import("rollup-plugin-postcss").default} */
+// @ts-ignore
+const postcss = require("rollup-plugin-postcss");
+/** @type {import("rollup-plugin-copy").default} */
+// @ts-ignore
+const copy = require("rollup-plugin-copy");
 
 // consts
 const assetsDirName = "assets";
@@ -88,23 +118,43 @@ const viewSource = restArgs.includes("--view-source");
 const appConfig = existsSync(ap("tinyrobots.config.js"))
   ? require(ap("tinyrobots.config.js"))
   : {};
+const port = appConfig.port || 3000;
 
+/**
+ * @param {string[]} ps
+ * @return {string}
+ */
 function ap(...ps) {
   return join(appPath, ...ps);
 }
 
+/**
+ * @param {string[]} ps
+ * @return {string}
+ */
 function apr(...ps) {
   return join(appPath, routesDirName, ...ps);
 }
 
+/**
+ * @template T
+ * @param {T[]} xs
+ * @return {T}
+ */
 function last(xs) {
   return xs[xs.length - 1];
 }
 
+/**
+ * @param {string} f
+ */
 function read(f) {
   return readFileSync(f, "utf-8");
 }
 
+/**
+ * @param {string} path
+ */
 function resolveAppPaths(path) {
   const fsFilePath = apr(path);
   const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
@@ -116,18 +166,22 @@ function resolveAppPaths(path) {
   } else if (isDir) {
     pagePathBase = join(path, "index");
     pageDirPath = fsFilePath;
-  } else if (last(path) === "/") {
+  } else if (path[path.length - 1] === "/") {
     pagePathBase = path.slice(0, -1);
   }
 
   const files = readdirSync(pageDirPath);
   const base = basename(pagePathBase);
   const fileName = files.find((f) => f.startsWith(base));
-  const ext = fileName ? extname(fileName) : null;
-  const pagePath = fileName ? `${pagePathBase}${ext}` : null;
+
+  if (!fileName) return null;
+
+  const pageId = pagePathBase.slice(1);
+  const ext = extname(fileName);
+  const pagePath = `${pagePathBase}${ext}`;
 
   return {
-    pageId: pagePathBase.slice(1),
+    pageId,
     pagePathBase,
     pageDirPath,
     fileName,
@@ -136,36 +190,20 @@ function resolveAppPaths(path) {
   };
 }
 
+/**
+ * @property {vite.ViteDevServer} server
+ */
 class Renderer {
-  async init() {
-    this.server = await vite.createServer({
-      // any valid user config options, plus `mode` and `configFile`
-      root: appPath,
-      server: {
-        middlewareMode: true,
-      },
-      resolve: {
-        extensions: [
-          ".mjs",
-          ".js",
-          ".ts",
-          ".jsx",
-          ".tsx",
-          ".json",
-          ".svelte",
-          ".svx",
-        ],
-      },
-      plugins: [
-        svelteVite({
-          preprocess: [mdsvex()],
-          extensions: [".svelte", ".svx"],
-        }),
-      ],
-      clearScreen: false,
-    });
+  /**
+   * @param {vite.ViteDevServer} server
+   */
+  constructor(server) {
+    this.server = server;
   }
 
+  /**
+   * @param {string} path
+   */
   async prefetchPath(path) {
     const { prefetch } = await this.server.ssrLoadModule(path);
     if (prefetch) {
@@ -173,6 +211,12 @@ class Renderer {
     }
   }
 
+  /**
+   *
+   * @param {string} path
+   * @param {RenderOptions} renderOptions
+   * @returns
+   */
   async renderPage(
     path,
     { pageId, src, code, preloads, layoutPath, appLayoutPath, dev, hot }
@@ -289,19 +333,46 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
   }
 }
 
-async function devServer() {
-  this.hostServer = express();
-  const renderer = new Renderer();
-
-  await renderer.init();
-
-  this.hostServer.use(renderer.server.middlewares);
-
-  await new Promise((r) => {
-    this.hostServer.listen(3000, () => r());
+function createViteServer() {
+  return vite.createServer({
+    // any valid user config options, plus `mode` and `configFile`
+    root: appPath,
+    server: {
+      middlewareMode: true,
+    },
+    resolve: {
+      extensions: [
+        ".mjs",
+        ".js",
+        ".ts",
+        ".jsx",
+        ".tsx",
+        ".json",
+        ".svelte",
+        ".svx",
+      ],
+    },
+    plugins: [
+      svelteVite({
+        preprocess: [
+          // @ts-ignore
+          mdsvex(),
+        ],
+        extensions: [".svelte", ".svx"],
+      }),
+    ],
+    clearScreen: false,
   });
+}
 
-  this.hostServer.use(async (req, res) => {
+async function devServer() {
+  const viteServer = await createViteServer();
+  const hostServer = express();
+  const renderer = new Renderer(viteServer);
+
+  hostServer.use(viteServer.middlewares);
+
+  hostServer.use(async (req, res) => {
     function error404() {
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/plain");
@@ -341,24 +412,36 @@ async function devServer() {
     }
 
     if (path.startsWith("/_dev_prefetch")) {
-      const pagepath = path.replace("/_dev_prefetch", "");
-      const { pagePath } = resolveAppPaths(pagepath);
+      const prefetchPath = path.replace("/_dev_prefetch", "");
+      const pageAppPaths = resolveAppPaths(prefetchPath);
+      if (!pageAppPaths) {
+        error404();
+        return;
+      }
+
       res.setHeader("Content-Type", "application/json");
       res.statusCode = 200;
-      const data = await renderer.prefetchPath(apr(pagePath));
+      const data = await renderer.prefetchPath(apr(pageAppPaths.pagePath));
       res.end(JSON.stringify(data));
       return;
     }
 
-    try {
-      const {
-        pageId,
-        pagePathBase,
-        pageDirPath,
-        pagePath,
-        fileName,
-      } = resolveAppPaths(path);
+    const pageAppPaths = resolveAppPaths(path);
 
+    if (!pageAppPaths) {
+      error404();
+      return;
+    }
+
+    const {
+      pageId,
+      pagePathBase,
+      pageDirPath,
+      pagePath,
+      fileName,
+    } = pageAppPaths;
+
+    try {
       if (fileName?.endsWith(".html")) {
         const htmlPath = apr(pagePathBase + ".html");
         res.setHeader("Content-Type", "text/html");
@@ -397,6 +480,7 @@ async function devServer() {
       );
 
       const { page } = await renderer.renderPage(pagePath, {
+        pageId: pageId,
         appLayoutPath,
         layoutPath,
         code,
@@ -418,13 +502,17 @@ async function devServer() {
       return;
     }
   });
+
+  await new Promise((r) => hostServer.listen(port, () => r(undefined)));
+
+  console.log(`🤖 🤖 🤖 listening on http://localhost:${port} 🤖 🤖 🤖`);
 }
 
-async function static({ dev } = {}) {
-  const renderer = new Renderer();
-  await renderer.init();
+async function buildStatic({ dev } = { dev: false }) {
+  const viteServer = await createViteServer();
+  const renderer = new Renderer(viteServer);
 
-  const pages = getAllPAges(apr("."));
+  const pages = getAllPages(apr("."));
 
   const hasAppLayout = existsSync(apr("_app.svelte"));
   const hasAppIndex = existsSync(ap("index.js"));
@@ -476,19 +564,14 @@ async function static({ dev } = {}) {
     dir: join(".", exportDirName, assetsDirName),
   });
 
-  /**
-   * @param o {import("rollup").OutputChunk & { facadeModuleId: string }}
-   * @returns {[string, import("rollup").OutputChunk]}
-   */
-  const mapOutput = (o) => [
-    o.facadeModuleId.replace(rollupVirtualFilePrefix, ""),
-    o,
-  ];
-
   const indexedOutput = new Map(
     bundle.output
       .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
-      .map(mapOutput)
+      .map((o) => [
+        // @ts-ignore
+        o.facadeModuleId.replace(rollupVirtualFilePrefix, ""),
+        o,
+      ])
   );
 
   const manifest = {};
@@ -521,7 +604,7 @@ async function static({ dev } = {}) {
       let page;
       let prefetchedProps;
       try {
-        p = await renderer.renderPage(filePath, {
+        const result = await renderer.renderPage(filePath, {
           pageId,
           layoutPath,
           appLayoutPath: hasAppLayout ? "_app.svelte" : null,
@@ -531,8 +614,8 @@ async function static({ dev } = {}) {
           dev,
           hot: false,
         });
-        page = p.page;
-        prefetchedProps = p.prefetchedProps;
+        page = result.page;
+        prefetchedProps = result.prefetchedProps;
       } catch (error) {
         console.error(`Export failed on page '${page}' with error:`, error);
         throw new Error("Export error");
@@ -687,7 +770,12 @@ function getRollupConfig({
   return options;
 }
 
-function getAllPAges(root, dir = "") {
+/**
+ * @param {string} root
+ * @param {string} dir
+ * @returns {PageRecord[]}
+ */
+function getAllPages(root, dir = "") {
   let pages = [];
   const dirents = readdirSync(join(root, dir), { withFileTypes: true });
   const hasLayout = !!dirents.find(
@@ -698,7 +786,7 @@ function getAllPAges(root, dir = "") {
     if (["_layout.svelte", "_app.svelte"].includes(dirent.name)) {
       continue;
     } else if (dirent.isDirectory()) {
-      for (const page of getAllPAges(root, join(dir, dirent.name))) {
+      for (const page of getAllPages(root, join(dir, dirent.name))) {
         pages.push(page);
       }
     } else if ([".svelte", ".svx"].includes(ext)) {
@@ -717,20 +805,31 @@ function getAllPAges(root, dir = "") {
   return pages;
 }
 
+/**
+ * @param {string} pageId
+ * @param {string | null | undefined} indexUrl
+ * @param {string} pageUrl
+ * @param {string | null | undefined} layoutUrl
+ * @param {string | null | undefined} appLayoutUrl
+ * @param {string} routeRuntimeUrl
+ * @param {string} appRuntimeUrl
+ * @param {boolean} isSPA
+ * @param {boolean} isDev
+ */
 function genEntry(
   pageId,
   indexUrl,
   pageUrl,
   layoutUrl,
   appLayoutUrl,
-  routeUrl,
-  appUrl,
+  routeRuntimeUrl,
+  appRuntimeUrl,
   isSPA,
   isDev
 ) {
   return `// generated by tiny robots
 ${indexUrl ? `import '${indexUrl}';` : ``}
-import Route from "${routeUrl}";
+import Route from "${routeRuntimeUrl}";
 import * as page from '${pageUrl}';
 ${layoutUrl ? `import Layout from '${layoutUrl}';` : `const Layout = null;`}
 ${
@@ -753,7 +852,7 @@ const start = ({ pageProps, hydrate }) => {
 
   ${
     isSPA
-      ? `import("${appUrl}")
+      ? `import("${appRuntimeUrl}")
     .then(m => m.start({ root, dev: ${!!isDev}, page, pageProps }));`
       : ""
   }
@@ -770,8 +869,9 @@ export { page, start, routeProps };
 }
 
 function genDevManifest() {
-  const pages = getAllPAges(apr("."));
+  const pages = getAllPages(apr("."));
 
+  /** @type Record<string, object> */
   const manifest = {};
 
   for (const { path, filePath, hasLayout, dir, pageId } of pages) {
@@ -840,7 +940,7 @@ async function main() {
   } else if (command === "init") {
     init();
   } else if (command === "export") {
-    await static({ dev });
+    await buildStatic({ dev });
   } else {
     console.error("Unrecognized command.");
   }
