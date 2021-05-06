@@ -422,7 +422,7 @@ async function devServer() {
       res.setHeader("Content-Type", "application/json");
       res.statusCode = 200;
       const data = await renderer.prefetchPath(apr(pageAppPaths.pagePath));
-      res.end(JSON.stringify(data));
+      res.end(JSON.stringify(data ?? {}));
       return;
     }
 

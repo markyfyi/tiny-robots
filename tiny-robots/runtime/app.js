@@ -7,8 +7,8 @@ let lastPendingId = pendingIdCtr;
 
 /** @type {{ paths: {[name: string]: { js: string, data: any }} }} */
 let cachedManifest;
-async function manifest() {
-  if (cachedManifest) return cachedManifest;
+async function manifest(refetch = false) {
+  if (!refetch && cachedManifest) return cachedManifest;
   cachedManifest = await (await fetch(manifestUrl)).json();
   return cachedManifest;
 }
@@ -74,8 +74,9 @@ const preLoad = async () => {
     }
   }
 };
+
 export function start({ root, dev, page, pageProps }) {
-  async function navigate(url, push) {
+  async function onURLChange(url, push) {
     const pathname =
       (url.pathname[url.pathname.length - 1] === "/"
         ? url.pathname.slice(0, -1)
@@ -89,55 +90,14 @@ export function start({ root, dev, page, pageProps }) {
     if (push) history.pushState({ id }, undefined, url.href);
 
     if (dev) {
-      await __dev__navigate({ root, pathname, id, params });
-      return true;
+      await __dev__navigate({ root, pathname, id, params, url });
     } else {
-      const entry = (await manifest()).paths[pathname];
-
-      if (lastPendingId !== id) {
-        return;
-      }
-
-      if (entry) {
-        const [m, data] = await Promise.all([
-          import(/* @vite-ignore */ entry.js),
-          entry.data
-            ? fetch(entry.data, {
-                method: "GET",
-                credentials: "include",
-                mode: "no-cors",
-              }).then((r) => r.json())
-            : null,
-        ]);
-
-        if (lastPendingId !== id) {
-          return;
-        }
-
-        const { routeProps, page: pageModule } = m;
-
-        const props = routeProps();
-
-        await update(
-          entry.pageId,
-          pathname,
-          root,
-          pageModule,
-          props,
-          id,
-          params,
-          data
-        );
-
-        setTimeout(preLoad, 200);
-
-        return true;
-      }
+      await navigate({ root, pathname, id, params, url });
     }
   }
 
   addEventListener("popstate", (e) => {
-    navigate(new URL(document.location));
+    onURLChange(new URL(document.location));
   });
 
   addEventListener("click", async (e) => {
@@ -153,7 +113,7 @@ export function start({ root, dev, page, pageProps }) {
     }
 
     if (url.origin === document.location.origin) {
-      const nagvigated = navigate(url, true);
+      const nagvigated = onURLChange(url, true);
       if (nagvigated) {
         e.preventDefault();
       }
@@ -162,10 +122,21 @@ export function start({ root, dev, page, pageProps }) {
 
   if (!dev) {
     manifest();
-    setTimeout(preLoad, 200);
   }
 
+  setTimeout(preLoad, 200);
+
   bootstrap({ root, dev, page, pageProps, id: pendingIdCtr });
+}
+
+function scroll(url) {
+  return; // todo...
+  const urlHashNode = url.hash && document.getElementById(url.hash.slice(1));
+  let scrollY = 0;
+  if (urlHashNode) {
+    scrollY = urlHashNode.getBoundingClientRect().top + scrollY;
+  }
+  scrollTo(0, scrollY);
 }
 
 async function update(
@@ -176,7 +147,8 @@ async function update(
   componentProps,
   id,
   params,
-  data
+  data,
+  url
 ) {
   if (eager) {
     root.$set({
@@ -186,6 +158,7 @@ async function update(
       fetching: true,
       pageProps: { ...data },
     });
+    scroll(url);
   }
 
   let clientProps = {};
@@ -207,40 +180,39 @@ async function update(
   };
 
   root.$set(props);
+
+  if (!eager) {
+    scroll(url);
+  }
+
+  setTimeout(preLoad, 200);
 }
 
-async function __dev__navigate({ root, pathname, id, params }) {
-  const manifest = await (await fetch(manifestUrl)).json();
-  const entry = manifest.paths[pathname];
+async function navigate({ root, pathname, id, params, url }) {
+  const entry = (await manifest()).paths[pathname];
+
   if (lastPendingId !== id) {
     return;
   }
 
   if (entry) {
-    const [pageModule, layoutModule, appLayoutModule] = await Promise.all([
+    const [{ routeProps, page: pageModule }, data] = await Promise.all([
       import(/* @vite-ignore */ entry.js),
-      entry.__dev__layoutJs
-        ? import(/* @vite-ignore */ entry.__dev__layoutJs)
-        : null,
-      manifest.__dev__appLayoutUrl
-        ? import(/* @vite-ignore */ manifest.__dev__appLayoutUrl)
+      // get preloaded
+      entry.data
+        ? fetch(entry.data, {
+            method: "GET",
+            credentials: "include",
+            mode: "no-cors",
+          }).then((r) => r.json())
         : null,
     ]);
-
-    let prefetchedProps;
-    if (pageModule.prefetch) {
-      prefetchedProps = await (await fetch("/_dev_prefetch" + pathname)).json();
-    }
 
     if (lastPendingId !== id) {
       return;
     }
 
-    const componentProps = {
-      pageComponent: pageModule.default,
-      layoutComponent: layoutModule ? layoutModule.default : undefined,
-      appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
-    };
+    const componentProps = routeProps();
 
     await update(
       entry.pageId,
@@ -250,8 +222,63 @@ async function __dev__navigate({ root, pathname, id, params }) {
       componentProps,
       id,
       params,
-      prefetchedProps
+      data,
+      url
     );
+
+    return true;
+  }
+}
+
+async function __dev__navigate({ root, pathname, id, params, url }) {
+  const entries = await manifest(true);
+  const entry = entries.paths[pathname];
+  if (lastPendingId !== id) {
+    return;
+  }
+
+  if (entry) {
+    const [
+      pageModule,
+      layoutModule,
+      appLayoutModule,
+      prefetchedProps,
+    ] = await Promise.all([
+      import(/* @vite-ignore */ entry.js),
+      entry.__dev__layoutJs
+        ? import(/* @vite-ignore */ entry.__dev__layoutJs)
+        : null,
+      entries.__dev__appLayoutUrl
+        ? import(/* @vite-ignore */ entries.__dev__appLayoutUrl)
+        : null,
+      fetch(`/_dev_prefetch${pathname}`).then(
+        (res) => (res.ok ? res.json() : {}),
+        () => ({})
+      ),
+    ]);
+    const componentProps = {
+      pageComponent: pageModule.default,
+      layoutComponent: layoutModule ? layoutModule.default : undefined,
+      appLayoutComponent: appLayoutModule ? appLayoutModule.default : undefined,
+    };
+
+    if (lastPendingId !== id) {
+      return;
+    }
+
+    await update(
+      entry.pageId,
+      pathname,
+      root,
+      pageModule,
+      componentProps,
+      id,
+      params,
+      prefetchedProps,
+      url
+    );
+
+    return true;
   }
 }
 

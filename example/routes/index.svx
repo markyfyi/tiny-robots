@@ -174,48 +174,43 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 #### Pending
 
 - Scroll restoration.
-- Add universal global `fetch`.
-- `prefetch` context - functions available during prefetch.
+- Type defs for config schema.
 - SEO defaults.
+  - Auto-generated.
   - Use svelte-seo.
   - Meta tags.
   - Social cards.
-- Better CSS transformation and extraction with postcss.
+- Better CSS extraction with postcss.
 - Support root-level index.css file (if you don't want to create a `./global` dir).
-- Route asset preloads on page transition.
-  - Scan for hrefs to other pages and preload their js/css/pages.
-  - Image preloads.
-    - Add images to manifest.
-- View source syntax highlighting.
-- Error pages.
-  - Error reporting.
-  - Error boundaries.
-  - SPA error handling.
-  - Sourcemaps
-    - Generate, upload, (optionally) destroy for prod.
-- Config file.
-
-#### Coming soon
-
-- Normalize URL schemes between dev and prod.
-  - Asset hashing.
-  - Add user-configured entries to manifest.
 - Routing improvements.
   - Error handling.
   - Ignore fetch when on same route.
   - Client-side only subroutes.
   - Dynamic routes (e.g. `/dir/[slug]`).
     - "Get static routes" capability.
+- Error pages.
+  - Error reporting.
+  - Error boundaries.
+  - SPA error handling.
+  - Sourcemaps
+    - Generate, upload, (optionally) destroy for prod.
+- Add user-configured entries to manifest.
+- svelte-preprocess config support.
+
+#### Coming soon
+
+- Image preloads.
+  - Add images to manifest.
+- Normalize URL schemes between dev and prod.
+  - Asset hashing.
 - Plain 'ol JS routes.
   - Option for server/client/universal.
   - Option to declare file type (html, js, json, css, rss, image?)
-- View source syntax highlighting.
 - npx/yarn `create-*-app` command
 - Generators for Netlify/Vercel/etc.
   - "Deploy on X" buttons.
   - Generate manifests for catchall routes and URL rewrites.
   - Abstraction for lambdas.
-- svelte-preprocess support.
 - PWA/service worker.
 - Sitemaps.
 - SSR mode.
@@ -224,6 +219,7 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 
 #### Ideas & fun stuff
 
+- View source syntax highlighting.
 - More HTML features.
   - Partials.
   - Merge head/body with template/layouts.
@@ -233,3 +229,4 @@ Note: unlike static assets, global assets aren't available in the `export` direc
 - View source: show dependencies too?
 - Experiment: Support for React pages.
 - Deferred JS load with intersection observers.
+- `prefetch` context - functions available during prefetch.
