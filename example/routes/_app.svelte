@@ -32,7 +32,7 @@
 
 <main class="app">
   <h1>
-    <a href="/">Tiny Robots</a>
+    <a href="/">Tiny <br />Robots</a>
   </h1>
   <center>
     <div class="icon">
@@ -65,13 +65,16 @@
 
 <style>
   h1 {
-    text-align: center;
+    line-height: 85%;
+    font-size: 3.3rem;
+    display: flex;
+    justify-content: center;
   }
 
   h1 a {
     color: unset;
     text-decoration: none;
-    font-weight: 800;
+    font-weight: 400;
   }
 
   main {

@@ -3,11 +3,11 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "export-dev",
-      "path": "template/",
+      "script": "dev",
+      "path": "example/",
       "problemMatcher": [],
-      "label": "example:export",
-      "detail": "tiny-robots export --dev",
+      "label": "example:dev",
+      "detail": "tiny-robots",
       "group": {
         "kind": "build",
         "isDefault": true
