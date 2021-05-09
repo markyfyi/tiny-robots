@@ -31,9 +31,14 @@
 {/if}
 
 <main class="app">
-  <h1>
-    <a href="/">Tiny <br />Robots</a>
-  </h1>
+  <div class="heading">
+    <h1>
+      <a href="/">Tiny <br />Robots</a>
+    </h1>
+    <center>
+      <em>(that write your code for you)</em>
+    </center>
+  </div>
   <center>
     <div class="icon">
       <a href="https://github.com/mkshio/tiny-robots/">
@@ -66,15 +71,17 @@
 <style>
   h1 {
     line-height: 85%;
-    font-size: 3.3rem;
+    font-size: 4rem;
     display: flex;
     justify-content: center;
+    text-align: center;
+    margin: 0;
   }
 
   h1 a {
     color: unset;
     text-decoration: none;
-    font-weight: 400;
+    font-style: italic;
   }
 
   main {
@@ -98,6 +105,10 @@
     margin-right: var(--space-regular);
     margin-bottom: var(--space-regular);
     list-style-type: none;
+  }
+
+  .heading {
+    margin-bottom: 24px;
   }
 
   .icon {

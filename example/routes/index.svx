@@ -10,10 +10,10 @@ Tiny Robots is a frontend anti-framework built on top of [Svelte](https://svelte
 - Fast dev mode, fast build step, fast runtime.
 - A minimal surface area - less code you have to remember.
 - 🔥 Ultrafast hot module replacement¹. 🔥 Seriously, we're talking really frickin' fast. Tiny Robots uses [Vite](https://www.vitejs.dev/) for module processing, so hot-reloads complete in the order of milliseconds and stay snappy no matter how large your app gets.
-- Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
 - Static site generation with dynamic data loading. Just run `yarn run tr export`.
-- Client side routing with automatic data fetching.
 - Filesystem-based routing, with directory-based layouts and global app layout.
+- Configurable universal data fetching. Routes can be loaded eagerly or wait until their data is loaded.
+- Client side routing with automatic data fetching.
 - Global CSS/JS support for stuff like vendor code or analytics. Just create a `global` directory and all of it's contents will get inlined into every page.
 - Markdown in your Svelte with [mdsvex](https://mdsvex.com/).
 
@@ -23,7 +23,7 @@ Tiny Robots is a frontend anti-framework built on top of [Svelte](https://svelte
 
 ### Project goals 🤖
 
-Tiny Robots embraces [Svelte's philosophy](https://svelte.dev/blog/write-less-code), and attempts to explore what applying those principles up the stack could look like. It borrows a lot of ideas from [Next.js](https://nextjs.org/) and [Sapper](https://sapper.svelte.dev/), but tries to keep a minimal footprint.
+Tiny Robots embraces [Svelte's philosophy](https://svelte.dev/blog/write-less-code), and attempts to explore what applying those principles up the stack could look like. It borrows a lot of ideas from [Next.js](https://nextjs.org/) and [SvelteKit](https://kit.svelte.dev/) while maintaining a minimal footprint.
 
 Tiny Robots aims to:
 
@@ -36,11 +36,13 @@ Tiny Robots aims to:
 
 _Check out the code for this site [here](https://github.com/mkshio/tiny-robots/tree/master/example)._
 
-> **Author's note:** 🏗️ This project is a week old. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
+> **Q: Why "Tiny Robots?** Well, it's how I explain the Svelte experience (and compilers) to folks who are new to the library. Imagine writing a tiny bit of instructions, and having an army of tiny robots get to work building out your grand vision, writing your code for you. Tiny Robots (the library) aims to elevate this experience to the web framework level.
 
 ---
 
 ### 1. Setup 📦
+
+> **Author's note:** 🏗️ This project is wildly WIP. It has bugs. It has random console-logs. It has no respect for SemVer (_not yet, sorry!_). It will have random breaking changes. It will have some bad ideas in it. But this project is ambitious, so please be kind and help where you can. Thanks!
 
 ```shell
 # a simple setup
