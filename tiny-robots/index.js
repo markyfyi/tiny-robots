@@ -221,10 +221,8 @@ class Renderer {
     path,
     { pageId, src, code, preloads, layoutPath, appLayoutPath, dev, hot }
   ) {
-    const {
-      default: pageComponent,
-      prefetch,
-    } = await this.server.ssrLoadModule(apr(path));
+    const { default: pageComponent, prefetch } =
+      await this.server.ssrLoadModule(apr(path));
 
     let prefetchedProps;
     if (prefetch) {
@@ -362,6 +360,7 @@ function createViteServer() {
       }),
     ],
     clearScreen: false,
+    ...(appConfig.vite ?? {}),
   });
 }
 
@@ -433,13 +432,8 @@ async function devServer() {
       return;
     }
 
-    const {
-      pageId,
-      pagePathBase,
-      pageDirPath,
-      pagePath,
-      fileName,
-    } = pageAppPaths;
+    const { pageId, pagePathBase, pageDirPath, pagePath, fileName } =
+      pageAppPaths;
 
     try {
       if (fileName?.endsWith(".html")) {

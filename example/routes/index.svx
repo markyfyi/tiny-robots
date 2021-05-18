@@ -54,7 +54,7 @@ yarn run tr init
 # --- or ---
 mkdir static # optional - static assets (images, fonts) go here
 touch index.html # optional - an HTML shell
-mkdir global # optional - global css/j"s files go here; they'll automatically be inlined
+mkdir global # optional - global css/js files go here, they'll be inlined automatically
 ```
 
 ### 2. Develop 👩🏽‍💻

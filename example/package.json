@@ -8,7 +8,7 @@
     "export-dev": "rm -fr export && tiny-robots export --dev --view-source"
   },
   "dependencies": {
-    "svelte": "^3.37.0",
+    "svelte": "^3.38.2",
     "tiny-robots": "latest"
   }
 }
