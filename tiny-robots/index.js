@@ -157,7 +157,12 @@ function read(f) {
  */
 function resolveAppPaths(path) {
   const fsFilePath = apr(path);
-  const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
+
+  if (!existsSync(fsFilePath)) {
+    return null;
+  }
+
+  const isDir = statSync(fsFilePath).isDirectory();
   let pagePathBase = path;
   let pageDirPath = dirname(fsFilePath);
   if (!path || path === "/") {
