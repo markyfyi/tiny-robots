@@ -38,25 +38,8 @@ const { mdsvex } = require("mdsvex");
 
 const express = require("express");
 const vite = require("vite");
-const { default: svelteVite } = require("@sveltejs/vite-plugin-svelte");
-
-const { rollup } = require("rollup");
-const svelteRollup = require("rollup-plugin-svelte");
-const { terser } = require("rollup-plugin-terser");
-const { nodeResolve } = require("@rollup/plugin-node-resolve");
+const { default: svelte } = require("@sveltejs/vite-plugin-svelte");
 const virtual = require("@rollup/plugin-virtual");
-/** @type {import("@rollup/plugin-commonjs").default} */
-// @ts-ignore
-const commonjs = require("@rollup/plugin-commonjs");
-/** @type {import("@rollup/plugin-replace").default} */
-// @ts-ignore
-const replace = require("@rollup/plugin-replace");
-/** @type {import("rollup-plugin-postcss").default} */
-// @ts-ignore
-const postcss = require("rollup-plugin-postcss");
-/** @type {import("rollup-plugin-copy").default} */
-// @ts-ignore
-const copy = require("rollup-plugin-copy");
 
 // consts
 const assetsDirName = "assets";
@@ -66,7 +49,7 @@ const htmlPath = "index.html";
 const rollupVirtualFilePrefix = "\x00virtual:";
 const globalAssetsPath = "global";
 const appLayoutModulePath = "/_app.svelte";
-const routeModulePath = "./node_modules/tiny-robots/runtime/Route.svelte";
+const routeModulePath = "tiny-robots/runtime/Route.svelte";
 const appModulePath = "tiny-robots/runtime/app";
 const devAppModulePath = "/node_modules/tiny-robots/runtime/app";
 const devRouteModulePath = "/node_modules/tiny-robots/runtime/Route";
@@ -158,13 +141,11 @@ function read(f) {
 function resolveAppPaths(path) {
   const fsFilePath = apr(path);
 
-  if (!existsSync(fsFilePath)) {
-    return null;
-  }
+  const isDir = existsSync(fsFilePath) && statSync(fsFilePath).isDirectory();
 
-  const isDir = statSync(fsFilePath).isDirectory();
-  let pagePathBase = path;
-  let pageDirPath = dirname(fsFilePath);
+  let pagePathBase;
+  let pageDirPath;
+
   if (!path || path === "/") {
     pagePathBase = "/index";
     pageDirPath = fsFilePath;
@@ -173,6 +154,14 @@ function resolveAppPaths(path) {
     pageDirPath = fsFilePath;
   } else if (path[path.length - 1] === "/") {
     pagePathBase = path.slice(0, -1);
+    pageDirPath = dirname(fsFilePath);
+  } else {
+    pagePathBase = path;
+    pageDirPath = dirname(fsFilePath);
+  }
+
+  if (!existsSync(pageDirPath)) {
+    return null;
   }
 
   const files = readdirSync(pageDirPath);
@@ -338,7 +327,6 @@ document.querySelectorAll('[data-style-dev]').forEach(el => el.remove());
 
 function createViteServer() {
   return vite.createServer({
-    // any valid user config options, plus `mode` and `configFile`
     root: appPath,
     server: {
       middlewareMode: true,
@@ -356,7 +344,8 @@ function createViteServer() {
       ],
     },
     plugins: [
-      svelteVite({
+      svelte({
+        emitCss: false,
         preprocess: [
           // @ts-ignore
           mdsvex(),
@@ -523,46 +512,41 @@ async function buildStatic({ dev } = { dev: false }) {
 
   const viewSourceCodeCache = new Map();
 
-  const target = join(appPath, routesDirName, "/");
-
   const virtualEntries = {
     ...baseVirtualEntries,
     ...appConfig.virtualEntries,
   };
 
-  const baseRollupConfig = getRollupConfig({
-    fileNames: { ...entries, ...(appConfig.entries ?? {}) },
-    dev,
-    virtualEntries,
-    onSvelteTransform: ({ id, output }) => {
-      if (id.startsWith(target)) {
-        const id_ = id.replace(target, "");
-
-        viewSourceCodeCache.set(id_, output);
-      }
+  /** @type import("rollup").RollupOutput */
+  // @ts-ignore
+  const bundle = await vite.build({
+    configFile: false,
+    plugins: [
+      svelte({
+        emitCss: false,
+        preprocess: [
+          // @ts-ignore
+          mdsvex(),
+        ],
+        extensions: [".svelte", ".svx"],
+      }),
+      virtual(virtualEntries),
+    ],
+    build: {
+      write: true,
+      manifest: true,
+      outDir: "export",
+      rollupOptions: {
+        preserveEntrySignatures: "strict",
+        input: entries,
+        preserveSymlinks: true,
+      },
     },
   });
-
-  const finalRollupConfig = appConfig.rollup
-    ? appConfig.rollup(baseRollupConfig)
-    : baseRollupConfig;
-
-  const build = await rollup(finalRollupConfig);
 
   mkdirp(ap(exportDirName));
   mkdirp(ap(exportDirName, "assets"));
   mkdirp(ap(exportDirName, "assets", "_data"));
-  const bundle = await build.write({
-    sourcemap: dev,
-    hoistTransitiveImports: false,
-    compact: true,
-    entryFileNames: (chunkInfo) => {
-      return chunkInfo.name.replace("_virtual:", "") + ".js";
-    },
-    format: "es",
-    dir: join(".", exportDirName, assetsDirName),
-  });
-
   const indexedOutput = new Map(
     bundle.output
       .filter((o) => "facadeModuleId" in o && o.facadeModuleId)
@@ -572,7 +556,6 @@ async function buildStatic({ dev } = { dev: false }) {
         o,
       ])
   );
-
   const manifest = {};
 
   await Promise.all(
@@ -587,7 +570,7 @@ async function buildStatic({ dev } = { dev: false }) {
       const { name: baseName, ext } = parse(name);
       const layoutPath = hasLayout ? join(dir, "_layout.svelte") : null;
       const output = indexedOutput.get(fileNamesToEntries[filePath]);
-      const outputFilePath = join("/", assetsDirName, output.fileName);
+      const outputFilePath = join("/", output.fileName);
       const dataPath = join(
         ".",
         assetsDirName,
@@ -596,9 +579,7 @@ async function buildStatic({ dev } = { dev: false }) {
       );
       // const dataFilePath = join("/", assetsDirName, "_data", output.fileName);
 
-      const preloadJs = (output?.imports ?? []).map((m) =>
-        join("/", assetsDirName, m)
-      );
+      const preloadJs = (output?.imports ?? []).map((m) => join("/", m));
 
       let page;
       let prefetchedProps;
@@ -662,7 +643,6 @@ async function buildStatic({ dev } = { dev: false }) {
     JSON.stringify({ paths: manifest }, null, dev ? "\t" : undefined)
   );
 
-  await build.close();
   await renderer.stop();
 }
 
@@ -673,10 +653,10 @@ function pagesToEntries(pages, hasAppLayout, hasAppIndex) {
   for (const { dir, filePath, hasLayout, pageId } of pages) {
     const code = genEntry(
       pageId,
-      hasAppIndex ? "./index" : null,
-      join(".", routesDirName, filePath),
-      hasLayout ? join(".", routesDirName, dir, "_layout.svelte") : null,
-      hasAppLayout ? join(".", routesDirName, "_app.svelte") : null,
+      hasAppIndex ? ap("./index") : null,
+      ap(join(routesDirName, filePath)),
+      hasLayout ? ap(join(routesDirName, dir, "_layout.svelte")) : null,
+      hasAppLayout ? ap(join(routesDirName, "_app.svelte")) : null,
       routeModulePath,
       appModulePath,
       isSPA,
@@ -693,80 +673,6 @@ function pagesToEntries(pages, hasAppLayout, hasAppIndex) {
     virtualEntries,
     fileNamesToEntries,
   };
-}
-
-function getRollupConfig({
-  fileNames,
-  dev,
-  virtualEntries,
-  onSvelteTransform,
-}) {
-  const sveltePlugin = svelteRollup({
-    ...sveltePluginOptions,
-    extensions: [".svelte", ".svx"],
-    emitCss: false,
-  });
-
-  // HACK: I'm sorry
-  const _transform = sveltePlugin.transform;
-  sveltePlugin.transform = async function (code, id) {
-    const result = await _transform.apply(this, [code, id]);
-
-    onSvelteTransform &&
-      onSvelteTransform({
-        id,
-        input: code,
-        output: result ? result.code : null,
-      });
-
-    return result;
-  };
-
-  /** @type {import('rollup').RollupOptions} */
-  const options = {
-    input: fileNames,
-    preserveSymlinks: true,
-    plugins: [
-      replace({
-        "process.browser": true,
-        "process.env": JSON.stringify({
-          NODE_ENV: dev ? "development" : "production",
-        }),
-      }),
-      virtual({
-        ...virtualEntries,
-        // HACK: use a plugin instead
-        fs: "export default {}",
-        path: "export default {}",
-      }),
-      sveltePlugin,
-      nodeResolve({
-        ...nodeResolveOptions,
-        browser: true,
-      }),
-      commonjs(),
-      postcss(),
-      copy({
-        targets: [
-          {
-            src: ap("static"),
-            dest: ap("export"),
-          },
-          {
-            src: ap("routes/**/*.html"),
-            dest: ap("export"),
-            flatten: false,
-            transform: (html) => {
-              return htmlMinifier.minify(html.toString(), htmlMinifyOptions);
-            },
-          },
-        ],
-      }),
-      !dev && terser(),
-    ],
-  };
-
-  return options;
 }
 
 /**
