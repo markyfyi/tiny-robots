@@ -40,6 +40,9 @@ const express = require("express");
 const vite = require("vite");
 const { default: svelte } = require("@sveltejs/vite-plugin-svelte");
 const virtual = require("@rollup/plugin-virtual");
+/** @type {import("rollup-plugin-copy").default} */
+// @ts-ignore
+const copy = require("rollup-plugin-copy");
 
 // consts
 const assetsDirName = "assets";
@@ -519,6 +522,7 @@ async function buildStatic({ dev } = { dev: false }) {
 
   /** @type import("rollup").RollupOutput */
   // @ts-ignore
+
   const bundle = await vite.build({
     configFile: false,
     plugins: [
@@ -531,6 +535,24 @@ async function buildStatic({ dev } = { dev: false }) {
         extensions: [".svelte", ".svx"],
       }),
       virtual(virtualEntries),
+      copy({
+        hook: "writeBundle",
+        targets: [
+          {
+            src: ap("static"),
+            dest: ap("export"),
+          },
+          {
+            src: ap("routes/**/*.html"),
+            dest: ap("export"),
+            flatten: false,
+            transform: (html) => {
+              return htmlMinifier.minify(html.toString(), htmlMinifyOptions);
+            },
+          },
+          ...(appConfig.copy ?? []),
+        ],
+      }),
     ],
     build: {
       write: true,
